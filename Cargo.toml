@@ -1,0 +1,9 @@
+[package]
+name = "cube"
+version = "0.1.0"
+authors = ["Kevin Mullins <kevin@pnotequalnp.com>"]
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+hashbrown = "0.9.1"
