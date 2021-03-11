@@ -1,4 +1,5 @@
 use crate::util::factorial;
+use core::ops::Index;
 
 type Element = u8;
 type CoordWidth = u16;
@@ -67,7 +68,7 @@ where
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Coordinate<const COUNT: u8>(pub(crate) CoordWidth);
 
 impl<const COUNT: u8> Coordinate<COUNT>
@@ -75,6 +76,11 @@ where
     [Element; upscale(COUNT)]: Sized,
 {
     pub const MAX: usize = factorial(COUNT) - 1;
+    pub const BOUND: u16 = factorial(COUNT) as u16;
+
+    pub fn all() -> impl Iterator<Item = Self> {
+        (0u16..Self::BOUND).map(Coordinate)
+    }
 
     pub const fn is_zero(&self) -> bool {
         self.0 == 0
@@ -115,6 +121,12 @@ where
 
 pub struct Generators<const COUNT: usize>(pub(crate) [usize; COUNT]);
 
+impl<const COUNT: usize> Generators<COUNT> {
+    pub fn iter(&self) -> core::slice::Iter<usize> {
+        self.0.iter()
+    }
+}
+
 impl<const COUNT: u8, const GENERATORS: usize> MoveTable<COUNT, GENERATORS>
 where
     [u8; upscale(COUNT)]: Sized,
@@ -147,5 +159,20 @@ where
         }
 
         (MoveTable(table), Generators(generators))
+    }
+}
+
+impl<const COUNT: u8, const GENERATORS: usize> Index<(Coordinate<COUNT>, usize)>
+    for MoveTable<COUNT, GENERATORS>
+where
+    [u8; upscale(COUNT)]: Sized,
+{
+    type Output = Coordinate<COUNT>;
+
+    fn index(
+        &self,
+        (Coordinate(position), generator): (Coordinate<COUNT>, usize),
+    ) -> &Self::Output {
+        &self.0[generator][position as usize]
     }
 }
