@@ -5,5 +5,9 @@ authors = ["Kevin Mullins <kevin@pnotequalnp.com>"]
 edition = "2018"
 license = "MIT"
 
+[features]
+default = ["std"]
+std = ["rayon"]
+
 [dependencies]
-hashbrown = "0.9.1"
+rayon = { version = "1.5", optional = true }
