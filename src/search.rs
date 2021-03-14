@@ -17,7 +17,7 @@ pub trait Search: Copy + Default + Eq + Sized {
     fn heuristic(self, data: &Self::HeuristicData) -> Depth;
 
     /// A transition function which calculates the next vertices of the graph to search given the
-    /// current vertex and a generator.
+    /// current vertex.
     fn transition(self) -> Box<dyn Iterator<Item = Self>>;
 
     /// A basic IDA* implementation, if the provided heuristic is a true lower bound, the paths it
