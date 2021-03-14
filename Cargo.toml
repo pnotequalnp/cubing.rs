@@ -5,9 +5,5 @@ authors = ["Kevin Mullins <kevin@pnotequalnp.com>"]
 edition = "2018"
 license = "MIT"
 
-[features]
-default = ["std"]
-std = ["rayon"]
-
 [dependencies]
 rayon = { version = "1.5", optional = true }

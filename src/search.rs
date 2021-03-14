@@ -1,140 +1,57 @@
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
-use core::ops::Index;
+
+pub type Depth = u8;
 
 pub trait Search: Copy + Default + Eq + Sized {
-    type Generator: Copy;
-    type Generators;
-    type GenIter: Iterator<Item = Self::Generator>;
-    type TransitionTable: Index<(Self, Self::Generator), Output = Self>;
-    type HeuristicTable: Index<Self, Output = usize>;
+    type HeuristicData;
 
-    fn gens(generators: &Self::Generators) -> Self::GenIter;
+    /// A domain-specific heuristic which gives a *lower bound* on the distance from any vertex to
+    /// the goal vertex. If this is not a true lower bound, then suboptimal paths may be
+    /// returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - Any required data for the heuristic function, such as a pre-computed table
+    fn heuristic(self, data: &Self::HeuristicData) -> Depth;
 
+    /// A transition function which calculates the next vertices of the graph to search given the
+    /// current vertex and a generator.
+    fn transition(self) -> Box<dyn Iterator<Item = Self>>;
+
+    /// A basic IDA* implementation, if the provided heuristic is a true lower bound, the paths it
+    /// finds are the shortest possible.
     fn ida_star(
         &self,
-        generators: &Self::Generators,
-        transition_table: &Self::TransitionTable,
-        heuristic_table: &Self::HeuristicTable,
-        max_depth: usize,
-    ) -> Option<Vec<Self::Generator>> {
+        heuristic_data: &Self::HeuristicData,
+        max_depth: Depth,
+    ) -> Option<Vec<Self>> {
         let goal = Self::default();
-        (0..max_depth).find_map(|depth| {
-            self.dfs(
-                goal,
-                generators,
-                transition_table,
-                heuristic_table,
-                0,
-                depth,
-            )
-        })
+        (0..max_depth).find_map(|depth| self.dfs(goal, heuristic_data, 0, depth))
     }
 
+    /// A depth-specific DFS implementation intended as a subroutine for IDA*.
     fn dfs(
         &self,
         goal: Self,
-        generators: &Self::Generators,
-        transition_table: &Self::TransitionTable,
-        heuristic_table: &Self::HeuristicTable,
-        depth: usize,
-        max_depth: usize,
-    ) -> Option<Vec<Self::Generator>> {
-        match (depth + heuristic_table[*self]).cmp(&max_depth) {
+        heuristic_data: &Self::HeuristicData,
+        depth: Depth,
+        max_depth: Depth,
+    ) -> Option<Vec<Self>> {
+        match (depth + self.heuristic(heuristic_data)).cmp(&max_depth) {
             Greater => None,
             Equal => (*self == goal).then(|| Vec::new()),
-            Less => Self::gens(generators).find_map(|generator| {
-                let next_depth = transition_table[(*self, generator)].dfs(
-                    goal,
-                    generators,
-                    transition_table,
-                    heuristic_table,
-                    depth + 1,
-                    max_depth,
-                );
-                match next_depth {
-                    None => None,
-                    Some(mut v) => {
-                        v.push(generator);
-                        Some(v)
-                    }
-                }
+            Less => self.transition().find_map(|vertex| {
+                let mut path = vertex.dfs(goal, heuristic_data, depth + 1, max_depth)?;
+                path.push(vertex);
+                Some(path)
             }),
         }
     }
 }
 
-#[cfg(feature = "std")]
-pub trait ParallelSearch: Search + Sync {
-    type GenParIter: rayon::iter::ParallelIterator<Item = Self::Generator>;
+#[cfg(feature = "rayon")]
+pub trait ParallelSearch: Search {
 
-    fn par_gens(generators: &Self::Generators) -> Self::GenParIter;
-
-    fn ida_star(
-        &self,
-        generators: &Self::Generators,
-        transition_table: &Self::TransitionTable,
-        heuristic_table: &Self::HeuristicTable,
-        max_depth: usize,
-    ) -> Option<Vec<Self::Generator>>
-    where
-        Self::HeuristicTable: Sync,
-        Self::TransitionTable: Sync,
-        Self::Generators: Sync,
-        Self::Generator: Send,
-    {
-        let goal = Self::default();
-        (0..max_depth).find_map(|depth| {
-            self.dfs_parallel(
-                goal,
-                generators,
-                transition_table,
-                heuristic_table,
-                0,
-                depth,
-            )
-        })
-    }
-
-    fn dfs_parallel(
-        &self,
-        goal: Self,
-        generators: &Self::Generators,
-        transition_table: &Self::TransitionTable,
-        heuristic_table: &Self::HeuristicTable,
-        depth: usize,
-        max_depth: usize,
-    ) -> Option<Vec<Self::Generator>>
-    where
-        Self::HeuristicTable: Sync,
-        Self::TransitionTable: Sync,
-        Self::Generators: Sync,
-        Self::Generator: Send,
-    {
-        match (depth + heuristic_table[*self]).cmp(&max_depth) {
-            Greater => None,
-            Equal => (*self == goal).then(|| Vec::new()),
-            Less => {
-                let iter = Self::par_gens(generators);
-
-                <Self::GenParIter as rayon::iter::ParallelIterator>::find_map_any(iter, |generator| {
-                    let next_depth = transition_table[(*self, generator)].dfs(
-                        goal,
-                        generators,
-                        transition_table,
-                        heuristic_table,
-                        depth + 1,
-                        max_depth,
-                    );
-                    match next_depth {
-                        None => None,
-                        Some(mut v) => {
-                            v.push(generator);
-                            Some(v)
-                        }
-                    }
-                })
-            }
-        }
-    }
 }
