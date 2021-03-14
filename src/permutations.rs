@@ -2,7 +2,7 @@ use crate::util::factorial;
 use core::ops::Index;
 
 type Element = u8;
-type CoordWidth = u16;
+type CoordWidth = u32;
 
 pub const fn upscale(x: u8) -> usize {
     x as usize
@@ -10,6 +10,10 @@ pub const fn upscale(x: u8) -> usize {
 
 pub const fn upscale16(x: u8) -> u16 {
     x as u16
+}
+
+pub const fn upscale32(x: u8) -> u32 {
+    x as u32
 }
 
 // HACK: Can be simplified once const generics are improved upstream
@@ -33,6 +37,22 @@ where
         pm
     };
 
+    pub const fn new(candidate: [Element; upscale(COUNT)]) -> Self {
+        let mut ix: usize = 0;
+        while ix < upscale(COUNT) - 1 {
+            let mut jx: usize = ix + 1;
+            while jx < upscale(COUNT) {
+                if candidate[ix] == candidate[jx] {
+                    panic!("Not a valid permutation array");
+                }
+                jx += 1;
+            }
+            ix += 1;
+        }
+
+        PermutationArray(candidate)
+    }
+
     pub const fn permute(&self, permutation: &Self) -> Self {
         let mut pm = Self::DEFAULT;
         let mut ix: usize = 0;
@@ -47,11 +67,11 @@ where
     }
 
     pub const fn coordinate(&self) -> Coordinate<COUNT> {
-        let mut t: u16 = 0;
-        let mut ix: u16 = 0;
+        let mut t: CoordWidth = 0;
+        let mut ix: CoordWidth = 0;
 
-        while ix < upscale16(COUNT) {
-            t *= upscale16(COUNT) - ix + 2;
+        while ix < upscale32(COUNT) {
+            t *= upscale32(COUNT) - ix + 2;
             let mut jx: usize = ix as usize + 1;
 
             while jx < upscale(COUNT) {
@@ -76,10 +96,10 @@ where
     [Element; upscale(COUNT)]: Sized,
 {
     pub const MAX: usize = factorial(COUNT) - 1;
-    pub const BOUND: u16 = factorial(COUNT) as u16;
+    pub const BOUND: CoordWidth = factorial(COUNT) as CoordWidth;
 
     pub fn all() -> impl Iterator<Item = Self> {
-        (0u16..Self::BOUND).map(Coordinate)
+        (0..Self::BOUND).map(Coordinate)
     }
 
     pub const fn is_zero(&self) -> bool {
@@ -93,7 +113,7 @@ where
 
         // ix from COUNT-1 to 0
         while ix != Element::MAX {
-            let r: CoordWidth = upscale16(COUNT) - ix as CoordWidth + 2;
+            let r: CoordWidth = upscale32(COUNT) - ix as CoordWidth + 2;
             pm[ix as usize] = 0 + (t % r) as Element;
             t /= r;
 
@@ -114,10 +134,10 @@ where
 
 // Can't currently index over the array of generators itself due to const generics restrictions
 pub struct MoveTable<const COUNT: u8, const GENERATORS: usize>(
-    pub(crate) [[Coordinate<COUNT>; upscale(COUNT)]; GENERATORS],
+    pub(crate) [[Coordinate<COUNT>; factorial(COUNT)]; GENERATORS],
 )
 where
-    [u8; upscale(COUNT)]: Sized;
+    [u8; factorial(COUNT)]: Sized;
 
 pub struct Generators<const COUNT: usize>(pub(crate) [usize; COUNT]);
 
@@ -130,11 +150,12 @@ impl<const COUNT: usize> Generators<COUNT> {
 impl<const COUNT: u8, const GENERATORS: usize> MoveTable<COUNT, GENERATORS>
 where
     [u8; upscale(COUNT)]: Sized,
+    [u8; factorial(COUNT)]: Sized,
 {
     pub const fn new(
         generators: &[PermutationArray<COUNT>; GENERATORS],
     ) -> (Self, Generators<GENERATORS>) {
-        let mut table = [[Coordinate::<COUNT>(0); upscale(COUNT)]; GENERATORS];
+        let mut table = [[Coordinate::<COUNT>(0); factorial(COUNT)]; GENERATORS];
 
         let mut position: CoordWidth = 0;
         while (position as usize) < Coordinate::<COUNT>::MAX {
@@ -165,7 +186,7 @@ where
 impl<const COUNT: u8, const GENERATORS: usize> Index<(Coordinate<COUNT>, usize)>
     for MoveTable<COUNT, GENERATORS>
 where
-    [u8; upscale(COUNT)]: Sized,
+    [u8; factorial(COUNT)]: Sized,
 {
     type Output = Coordinate<COUNT>;
 
