@@ -45,7 +45,7 @@ impl<const N: usize> PermutationArray<N> {
     }
 
     /// Permute this array according to the permutation given by the argument.
-    pub fn permute(&self, permutation: &Self) -> Self {
+    pub const fn permute(&self, permutation: &Self) -> Self {
         let PermutationArray(mut pm) = Self::IDENTITY;
         let mut ix: usize = 0;
 
@@ -84,10 +84,10 @@ impl<const N: usize> PermutationArray<N> {
         let mut t: CoordWidth = 0;
         let mut ix: CoordWidth = 0;
 
-        while ix < n - 2 {
+        while ix < n - 1 {
             t *= n - ix;
-            let mut jx: usize = ix as usize + 1;
 
+            let mut jx = ix as usize + 1;
             while jx < N {
                 if pm[ix as usize] > pm[jx] {
                     t += 1;
@@ -97,6 +97,11 @@ impl<const N: usize> PermutationArray<N> {
 
             ix += 1;
         }
+
+        debug_assert!(
+            (t as usize) < factorial(N),
+            "Coordinate calculated outside of coordinate space"
+        );
 
         Coordinate(t)
     }
@@ -131,11 +136,9 @@ impl<const N: usize> Coordinate<N> {
     pub const fn permutation_array(&self) -> PermutationArray<N> {
         let Coordinate(mut t) = self;
         let mut pm: [Element; N] = [0; N];
-        let mut ix: Element = N as Element - 3;
+        let mut ix: Element = N as Element - 2;
 
-        pm[N - 1] = 1;
-
-        // ix from MAX-1 to 0, with wrapping subtraction because it is unsigned
+        // ix from N-2 to 0, with wrapping subtraction because it is unsigned
         while ix != Element::MAX {
             let r: CoordWidth = N as CoordWidth - ix as CoordWidth;
             pm[ix as usize] = (t % r) as Element;

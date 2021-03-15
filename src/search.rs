@@ -30,7 +30,10 @@ pub trait Search: Copy + Default + Eq + Sized {
         max_depth: Depth,
     ) -> Option<Vec<(Self, Self::Edge)>> {
         let goal = Self::default();
-        (0..max_depth).find_map(|depth| self.dfs(goal, heuristic_data, transition_data, 0, depth))
+        let mut path = (0..max_depth)
+            .find_map(|depth| self.dfs(goal, heuristic_data, transition_data, 0, depth))?;
+        path.reverse();
+        Some(path)
     }
 
     /// A depth-specific DFS implementation intended as a subroutine for IDA*.
@@ -42,15 +45,19 @@ pub trait Search: Copy + Default + Eq + Sized {
         depth: Depth,
         max_depth: Depth,
     ) -> Option<Vec<(Self, Self::Edge)>> {
-        match (depth + self.heuristic(heuristic_data)).cmp(&max_depth) {
-            Greater => None,
-            Equal => (*self == goal).then(|| Vec::new()),
-            Less => self.transition(transition_data).into_iter().find_map(|(vertex, edge)| {
-                let mut path =
-                    vertex.dfs(goal, heuristic_data, transition_data, depth + 1, max_depth)?;
-                path.push((*self, edge));
-                Some(path)
-            }),
+        if *self == goal {
+            Some(Vec::new())
+        } else if depth + self.heuristic(heuristic_data) < max_depth {
+            self.transition(transition_data)
+                .into_iter()
+                .find_map(|(vertex, edge)| {
+                    let mut path =
+                        vertex.dfs(goal, heuristic_data, transition_data, depth + 1, max_depth)?;
+                    path.push((*self, edge));
+                    Some(path)
+                })
+        } else {
+            None
         }
     }
 }
