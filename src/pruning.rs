@@ -23,7 +23,10 @@ where
         generators: &[T; M],
         transition: impl Fn(&S, &T) -> S,
     ) -> Self {
-        let mut table = Box::new([Depth::MAX; factorial(N)]);
+        let mut table: Box<[u8; factorial(N)]> = vec![Depth::MAX; factorial(N)]
+            .into_boxed_slice()
+            .try_into()
+            .unwrap();
 
         table[goal.into()] = 0;
 

@@ -1,6 +1,6 @@
 use crate::util::factorial;
 use alloc::boxed::Box;
-use core::convert::TryFrom;
+use core::convert::{TryFrom,TryInto};
 use core::iter::Product;
 
 type Element = u8;
@@ -183,25 +183,29 @@ impl<const N: usize> From<Coordinate<N>> for usize {
 /// NB: Indexing is based on the index of the coordinate in the `permutations` argument of `new`. It
 /// is your responsibility to keep track of what coordinates these indices correlate with.
 #[repr(transparent)]
-pub struct TransitionTable<const N: usize, const M: usize>(Box<[[Coordinate<N>; factorial(N)]; M]>)
+pub struct TransitionTable<const N: usize, const M: usize>(Box<[Coordinate<N>; factorial(N) * M]>)
 where
-    [Coordinate<N>; factorial(N)]: Sized;
+    [Coordinate<N>; factorial(N) * M]: Sized;
 
 impl<const N: usize, const M: usize> TransitionTable<N, M>
 where
-    [Coordinate<N>; factorial(N)]: Sized,
+    [Coordinate<N>; factorial(N) * M]: Sized,
 {
     /// Create a new table from a slice of generators. The table is based on the index of the
     /// permutations in the argument, and it is your responsibility to track them, as you will need
     /// them to look up coordinates with `transition`.
+    // #[inline(never)]
     pub fn new(permutations: &[PermutationArray<N>; M]) -> Self {
-        let mut table: Box<[[Coordinate<N>; factorial(N)]; M]> =
-            Box::new([[Coordinate::<N>(0); factorial(N)]; M]);
+        let mut table: Box<[Coordinate<N>; factorial(N) * M]> =
+            vec![Coordinate::<N>(0); factorial(N) * M]
+                .into_boxed_slice()
+                .try_into()
+                .unwrap();
 
         for position in Coordinate::<N>::all() {
             for (ix, permutation) in permutations.iter().enumerate() {
                 let position_index: usize = position.into();
-                table[ix][position_index] = position
+                table[position_index * M + ix] = position
                     .permutation_array()
                     .permute(permutation)
                     .coordinate();
@@ -216,6 +220,6 @@ where
     pub fn transition(&self, position: Coordinate<N>, permutation_index: usize) -> Coordinate<N> {
         let TransitionTable(table) = self;
         let position_index: usize = position.into();
-        table[permutation_index][position_index]
+        table[position_index * M + permutation_index]
     }
 }

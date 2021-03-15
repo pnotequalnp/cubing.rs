@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::cmp::Ordering::{Equal, Greater, Less};
 
 pub type Depth = u8;
 

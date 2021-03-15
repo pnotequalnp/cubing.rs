@@ -24,7 +24,7 @@
         };
       in {
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ nodejs rust-src wasm-pack ];
+          nativeBuildInputs = with pkgs; [ nodejs rust-src wasm-pack cargo-asm ];
         };
       });
 }

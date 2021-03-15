@@ -6,8 +6,10 @@
 #![feature(const_generics)]
 #![feature(const_panic)]
 
+#[macro_use]
 extern crate alloc;
 
+pub mod orientations;
 pub mod permutations;
 pub mod pruning;
 pub mod search;
