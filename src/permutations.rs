@@ -1,47 +1,38 @@
 use crate::util::factorial;
-use core::ops::Index;
+use alloc::boxed::Box;
+use core::convert::TryFrom;
+use core::iter::Product;
 
 type Element = u8;
 type CoordWidth = u32;
 
-pub const fn upscale(x: u8) -> usize {
-    x as usize
-}
+/// An array which represents all permutations of `N` elements. It contains all elements indexed `0`
+/// to `N - 1` exactly once, in any order.
+#[repr(transparent)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PermutationArray<const N: usize>([Element; N]);
 
-pub const fn upscale16(x: u8) -> u16 {
-    x as u16
-}
-
-pub const fn upscale32(x: u8) -> u32 {
-    x as u32
-}
-
-// HACK: Can be simplified once const generics are improved upstream
-pub struct PermutationArray<const COUNT: u8>([Element; upscale(COUNT)])
-where
-    [Element; upscale(COUNT)]: Sized;
-
-impl<const COUNT: u8> PermutationArray<COUNT>
-where
-    [Element; upscale(COUNT)]: Sized,
-{
-    pub const DEFAULT: [Element; upscale(COUNT)] = {
-        let mut pm = [0; upscale(COUNT)];
+impl<const N: usize> PermutationArray<N> {
+    /// The identity permutation. `x.permute(IDENTITY) == x`
+    pub const IDENTITY: PermutationArray<N> = {
+        let mut pm = [0; N];
         let mut ix = 1u8;
 
-        while ix < COUNT as u8 {
+        while ix < N as u8 {
             pm[ix as usize] = ix;
             ix += 1;
         }
 
-        pm
+        PermutationArray(pm)
     };
 
-    pub const fn new(candidate: [Element; upscale(COUNT)]) -> Self {
+    /// Construct a new `PermutationArray` from a raw array representation. Panics if the argument
+    /// is not a proper permutation array.
+    pub const fn new(candidate: [Element; N]) -> Self {
         let mut ix: usize = 0;
-        while ix < upscale(COUNT) - 1 {
+        while ix < N - 1 {
             let mut jx: usize = ix + 1;
-            while jx < upscale(COUNT) {
+            while jx < N {
                 if candidate[ix] == candidate[jx] {
                     panic!("Not a valid permutation array");
                 }
@@ -53,11 +44,12 @@ where
         PermutationArray(candidate)
     }
 
-    pub const fn permute(&self, permutation: &Self) -> Self {
-        let mut pm = Self::DEFAULT;
+    /// Permute this array according to the permutation given by the argument.
+    pub fn permute(&self, permutation: &Self) -> Self {
+        let PermutationArray(mut pm) = Self::IDENTITY;
         let mut ix: usize = 0;
 
-        while ix < upscale(COUNT) {
+        while ix < N {
             let jx = permutation.0[ix] as usize;
             pm[ix] = self.0[jx];
             ix += 1;
@@ -66,16 +58,38 @@ where
         PermutationArray(pm)
     }
 
-    pub const fn coordinate(&self) -> Coordinate<COUNT> {
+    // FIXME: change this to a true in-place algorithm
+    /// Permute this array in-place according to the permutation given by the argument.
+    pub fn permute_(&mut self, permutation: &Self) {
+        let PermutationArray(mut pm) = Self::IDENTITY;
+        let mut ix: usize = 0;
+
+        while ix < N {
+            let jx = permutation.0[ix] as usize;
+            pm[ix] = self.0[jx];
+            ix += 1;
+        }
+
+        self.0 = pm;
+    }
+
+    /// Transform a permutation into its coordinate representation. This is only possible with
+    /// arrays less 13 elements long because the coordinate width is currently hardcoded to 32 bits.
+    pub const fn coordinate(&self) -> Coordinate<N> {
+        debug_assert!(N < 13, "Coordinate space exceeds u32");
+
+        let PermutationArray(pm) = self;
+
+        let n: CoordWidth = N as CoordWidth;
         let mut t: CoordWidth = 0;
         let mut ix: CoordWidth = 0;
 
-        while ix < upscale32(COUNT) {
-            t *= upscale32(COUNT) - ix + 2;
+        while ix < n - 2 {
+            t *= n - ix;
             let mut jx: usize = ix as usize + 1;
 
-            while jx < upscale(COUNT) {
-                if self.0[ix as usize] > self.0[jx] {
+            while jx < N {
+                if pm[ix as usize] > pm[jx] {
                     t += 1;
                 };
                 jx += 1;
@@ -88,37 +102,47 @@ where
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub struct Coordinate<const COUNT: u8>(pub(crate) CoordWidth);
+impl<const N: usize> Product for PermutationArray<N> {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::IDENTITY, |x, y| x.permute(&y))
+    }
+}
 
-impl<const COUNT: u8> Coordinate<COUNT>
-where
-    [Element; upscale(COUNT)]: Sized,
-{
-    pub const MAX: usize = factorial(COUNT) - 1;
-    pub const BOUND: CoordWidth = factorial(COUNT) as CoordWidth;
+/// Coordinate representation for all permutations of `N` elements. Because it is hardcoded at 32
+/// bits, it only works for `N < 13`. `N >= 13` will panic on overflow.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Coordinate<const N: usize>(CoordWidth);
 
+impl<const N: usize> Coordinate<N> {
+    /// The highest coordinate value possible for this `N`, computed as `N! - 1`.
+    pub const MAX: usize = factorial(N) - 1;
+
+    /// The number of coordinates in the coordinate space for this `N`, computed as `N!`.
+    pub const BOUND: CoordWidth = factorial(N) as CoordWidth;
+
+    /// Iterate over all coordinates in the coordinate space.
     pub fn all() -> impl Iterator<Item = Self> {
         (0..Self::BOUND).map(Coordinate)
     }
 
-    pub const fn is_zero(&self) -> bool {
-        self.0 == 0
-    }
+    /// Extract the permutation array representation which corresponds to this coordinate. This is
+    /// inverse of `PermutationArray::coordinate`. `x.coordinate().permutation_array() == x`
+    pub const fn permutation_array(&self) -> PermutationArray<N> {
+        let Coordinate(mut t) = self;
+        let mut pm: [Element; N] = [0; N];
+        let mut ix: Element = N as Element - 3;
 
-    pub const fn permutation_array(&self) -> PermutationArray<COUNT> {
-        let mut t = self.0;
-        let mut pm: [Element; upscale(COUNT)] = [0; upscale(COUNT)];
-        let mut ix: Element = COUNT - 1;
+        pm[N - 1] = 1;
 
-        // ix from COUNT-1 to 0
+        // ix from MAX-1 to 0, with wrapping subtraction because it is unsigned
         while ix != Element::MAX {
-            let r: CoordWidth = upscale32(COUNT) - ix as CoordWidth + 2;
-            pm[ix as usize] = 0 + (t % r) as Element;
+            let r: CoordWidth = N as CoordWidth - ix as CoordWidth;
+            pm[ix as usize] = (t % r) as Element;
             t /= r;
 
             let mut jx: usize = ix as usize + 1;
-            while jx < upscale(COUNT) {
+            while jx < N {
                 if pm[jx] >= pm[ix as usize] {
                     pm[jx] += 1;
                 };
@@ -132,68 +156,63 @@ where
     }
 }
 
-// Can't currently index over the array of generators itself due to const generics restrictions
-pub struct MoveTable<const COUNT: u8, const GENERATORS: usize>(
-    pub(crate) [[Coordinate<COUNT>; factorial(COUNT)]; GENERATORS],
-)
-where
-    [u8; factorial(COUNT)]: Sized;
+impl<const N: usize> TryFrom<usize> for Coordinate<N> {
+    type Error = ();
 
-pub struct Generators<const COUNT: usize>(pub(crate) [usize; COUNT]);
-
-impl<const COUNT: usize> Generators<COUNT> {
-    pub fn iter(&self) -> core::slice::Iter<usize> {
-        self.0.iter()
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        if value <= Coordinate::<N>::MAX {
+            Ok(Coordinate(value as CoordWidth))
+        } else {
+            Err(())
+        }
     }
 }
 
-impl<const COUNT: u8, const GENERATORS: usize> MoveTable<COUNT, GENERATORS>
-where
-    [u8; upscale(COUNT)]: Sized,
-    [u8; factorial(COUNT)]: Sized,
-{
-    pub const fn new(
-        generators: &[PermutationArray<COUNT>; GENERATORS],
-    ) -> (Self, Generators<GENERATORS>) {
-        let mut table = [[Coordinate::<COUNT>(0); factorial(COUNT)]; GENERATORS];
+impl<const N: usize> From<Coordinate<N>> for usize {
+    fn from(Coordinate(value): Coordinate<N>) -> Self {
+        value as usize
+    }
+}
 
-        let mut position: CoordWidth = 0;
-        while (position as usize) < Coordinate::<COUNT>::MAX {
-            let mut gen: usize = 0;
-            while gen < GENERATORS {
-                let pm = Coordinate::<COUNT>(position)
+/// A table which allows for direct permutation of coordinates by pre-calculating the effect of `M`
+/// particular permutations on the entire space.
+///
+/// NB: Indexing is based on the index of the coordinate in the `permutations` argument of `new`. It
+/// is your responsibility to keep track of what coordinates these indices correlate with.
+#[repr(transparent)]
+pub struct TransitionTable<const N: usize, const M: usize>(Box<[[Coordinate<N>; factorial(N)]; M]>)
+where
+    [Coordinate<N>; factorial(N)]: Sized;
+
+impl<const N: usize, const M: usize> TransitionTable<N, M>
+where
+    [Coordinate<N>; factorial(N)]: Sized,
+{
+    /// Create a new table from a slice of generators. The table is based on the index of the
+    /// permutations in the argument, and it is your responsibility to track them, as you will need
+    /// them to look up coordinates with `transition`.
+    pub fn new(permutations: &[PermutationArray<N>; M]) -> Self {
+        let mut table: Box<[[Coordinate<N>; factorial(N)]; M]> =
+            Box::new([[Coordinate::<N>(0); factorial(N)]; M]);
+
+        for position in Coordinate::<N>::all() {
+            for (ix, permutation) in permutations.iter().enumerate() {
+                let position_index: usize = position.into();
+                table[ix][position_index] = position
                     .permutation_array()
-                    .permute(&generators[gen]);
-
-                table[gen][position as usize] = pm.coordinate();
-
-                gen += 1;
+                    .permute(permutation)
+                    .coordinate();
             }
-            position += 1;
         }
 
-        let mut generators: [usize; GENERATORS] = [0; GENERATORS];
-        let mut ix: usize = 0;
-        while ix < GENERATORS {
-            generators[ix] = ix;
-            ix += 1;
-        }
-
-        (MoveTable(table), Generators(generators))
+        TransitionTable(table)
     }
-}
 
-impl<const COUNT: u8, const GENERATORS: usize> Index<(Coordinate<COUNT>, usize)>
-    for MoveTable<COUNT, GENERATORS>
-where
-    [u8; factorial(COUNT)]: Sized,
-{
-    type Output = Coordinate<COUNT>;
-
-    fn index(
-        &self,
-        (Coordinate(position), generator): (Coordinate<COUNT>, usize),
-    ) -> &Self::Output {
-        &self.0[generator][position as usize]
+    /// Look up the coordinate resulting from permuting `position` with the permutation at index
+    /// `permutation_index` in the slice originally passed to `new` when constructing this table.
+    pub fn transition(&self, position: Coordinate<N>, permutation_index: usize) -> Coordinate<N> {
+        let TransitionTable(table) = self;
+        let position_index: usize = position.into();
+        table[permutation_index][position_index]
     }
 }

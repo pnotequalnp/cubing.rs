@@ -1,7 +1,7 @@
-pub const fn factorial(x: u8) -> usize {
+pub const fn factorial(x: usize) -> usize {
     if x < 2 { return 1; }
-    let mut t = x as usize;
-    let mut x = x as usize - 1;
+    let mut t = x;
+    let mut x = x - 1;
 
     while x > 1 {
         t *= x;

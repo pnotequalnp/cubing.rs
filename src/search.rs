@@ -4,6 +4,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 pub type Depth = u8;
 
 pub trait Search: Copy + Default + Eq + Sized {
+    type Edge: Copy;
     type HeuristicData;
     type TransitionData;
 
@@ -18,7 +19,7 @@ pub trait Search: Copy + Default + Eq + Sized {
 
     /// A transition function which calculates the next vertices of the graph to search given the
     /// current vertex.
-    fn transition(self, data: &Self::TransitionData) -> Vec<Self>;
+    fn transition(self, data: &Self::TransitionData) -> Vec<(Self, Self::Edge)>;
 
     /// A basic IDA* implementation, if the provided heuristic is a true lower bound, the paths it
     /// finds are the shortest possible.
@@ -27,7 +28,7 @@ pub trait Search: Copy + Default + Eq + Sized {
         heuristic_data: &Self::HeuristicData,
         transition_data: &Self::TransitionData,
         max_depth: Depth,
-    ) -> Option<Vec<Self>> {
+    ) -> Option<Vec<(Self, Self::Edge)>> {
         let goal = Self::default();
         (0..max_depth).find_map(|depth| self.dfs(goal, heuristic_data, transition_data, 0, depth))
     }
@@ -40,14 +41,14 @@ pub trait Search: Copy + Default + Eq + Sized {
         transition_data: &Self::TransitionData,
         depth: Depth,
         max_depth: Depth,
-    ) -> Option<Vec<Self>> {
+    ) -> Option<Vec<(Self, Self::Edge)>> {
         match (depth + self.heuristic(heuristic_data)).cmp(&max_depth) {
             Greater => None,
             Equal => (*self == goal).then(|| Vec::new()),
-            Less => self.transition(transition_data).into_iter().find_map(|vertex| {
+            Less => self.transition(transition_data).into_iter().find_map(|(vertex, edge)| {
                 let mut path =
                     vertex.dfs(goal, heuristic_data, transition_data, depth + 1, max_depth)?;
-                path.push(vertex);
+                path.push((*self, edge));
                 Some(path)
             }),
         }

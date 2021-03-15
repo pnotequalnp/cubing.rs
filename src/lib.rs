@@ -1,4 +1,4 @@
-// #![no_std]
+#![no_std]
 #![allow(incomplete_features)]
 #![feature(array_map)]
 #![feature(new_uninit)]
@@ -11,4 +11,4 @@ extern crate alloc;
 pub mod permutations;
 pub mod pruning;
 pub mod search;
-pub mod util;
+mod util;

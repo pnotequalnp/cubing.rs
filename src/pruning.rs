@@ -1,62 +1,45 @@
-use crate::permutations::*;
+use crate::search::Depth;
 use crate::util::factorial;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::ops::{Index, IndexMut};
+use core::convert::{TryFrom, TryInto};
+use core::marker::PhantomData;
 
 #[repr(transparent)]
-pub struct PruningTable<const COUNT: u8>([u8; factorial(COUNT)])
+pub struct PruningTable<S: Into<usize> + TryFrom<usize>, T, const N: usize>(
+    Box<[Depth; factorial(N)]>,
+    PhantomData<S>,
+    PhantomData<T>,
+)
 where
-    [u8; factorial(COUNT)]: Sized;
+    [Depth; factorial(N)]: Sized;
 
-impl<const COUNT: u8> Index<Coordinate<COUNT>> for PruningTable<COUNT>
+impl<S: Into<usize> + TryFrom<usize>, T, const N: usize> PruningTable<S, T, N>
 where
-    [u8; factorial(COUNT)]: Sized,
+    [Depth; factorial(N)]: Sized,
 {
-    type Output = u8;
+    pub fn new<const M: usize>(
+        goal: S,
+        generators: &[T; M],
+        transition: impl Fn(&S, &T) -> S,
+    ) -> Self {
+        let mut table = Box::new([Depth::MAX; factorial(N)]);
 
-    fn index(&self, Coordinate(position): Coordinate<COUNT>) -> &Self::Output {
-        &self.0[position as usize]
-    }
-}
-
-impl<const COUNT: u8> IndexMut<Coordinate<COUNT>> for PruningTable<COUNT>
-where
-    [u8; factorial(COUNT)]: Sized,
-{
-    fn index_mut(&mut self, Coordinate(position): Coordinate<COUNT>) -> &mut Self::Output {
-        &mut self.0[position as usize]
-    }
-}
-
-impl<const COUNT: u8> PruningTable<COUNT>
-where
-    [u8; factorial(COUNT)]: Sized,
-    [u8; upscale(COUNT)]: Sized,
-{
-    pub fn new<const GENERATORS: usize>(
-        goal: Coordinate<COUNT>,
-        generators: &Generators<GENERATORS>,
-        move_table: &MoveTable<COUNT, GENERATORS>,
-    ) -> Box<PruningTable<COUNT>> {
-        let mut table = unsafe { Box::<PruningTable<COUNT>>::new_zeroed().assume_init() };
-
-        for ix in 0..factorial(COUNT) {
-            table.0[ix] = u8::MAX;
-        }
-
-        table[goal] = 0;
+        table[goal.into()] = 0;
 
         (0..).find(|depth| {
-            let positions: Vec<Coordinate<COUNT>> = Coordinate::<COUNT>::all()
-                .filter_map(|position| (table[position] == *depth).then(|| position))
+            let positions: Vec<S> = table
+                .iter()
+                .enumerate()
+                .filter_map(|(ix, d)| (d == depth).then(|| ix))
+                .filter_map(|ix| ix.try_into().ok())
                 .collect();
 
             for position in &positions {
-                for gen in generators.iter() {
-                    let new_position = move_table[(*position, *gen)];
-                    if table[new_position] > *depth + 1 {
-                        table[new_position] = depth + 1;
+                for generator in generators.iter() {
+                    let ix = transition(position, generator).into();
+                    if table[ix] > *depth + 1 {
+                        table[ix] = depth + 1;
                     };
                 }
             }
@@ -64,6 +47,11 @@ where
             positions.is_empty()
         });
 
-        table
+        PruningTable(table, PhantomData, PhantomData)
+    }
+
+    pub fn lookup(&self, position: S) -> Depth {
+        let PruningTable(table, _, _) = self;
+        table[position.into()]
     }
 }
