@@ -27,10 +27,18 @@ pub trait Search: Copy + Default + Eq + Sized {
         heuristic_data: &Self::HeuristicData,
         transition_data: &Self::TransitionData,
         max_depth: Depth,
+        on_depth_completion: Option<impl Fn(Depth)>,
     ) -> Option<Vec<(Self, Self::Edge)>> {
         let goal = Self::default();
-        let mut path = (0..max_depth)
-            .find_map(|depth| self.dfs(goal, heuristic_data, transition_data, 0, depth))?;
+        let mut path = (0..=max_depth).find_map(|depth| {
+            let res = self.dfs(goal, heuristic_data, transition_data, 0, depth);
+            if let None = res {
+                if let Some(f) = &on_depth_completion {
+                    f(depth);
+                };
+            };
+            res
+        })?;
         path.reverse();
         Some(path)
     }

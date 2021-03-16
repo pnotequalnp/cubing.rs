@@ -1,32 +1,27 @@
-use crate::search::Depth;
-use crate::util::factorial;
+pub use crate::search::Depth;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::marker::PhantomData;
 
-#[repr(transparent)]
 pub struct PruningTable<S: Into<usize> + TryFrom<usize>, T, const N: usize>(
-    Box<[Depth; factorial(N)]>,
+    Box<[Depth; N]>,
     PhantomData<S>,
     PhantomData<T>,
 )
 where
-    [Depth; factorial(N)]: Sized;
+    [Depth; N]: Sized;
 
 impl<S: Into<usize> + TryFrom<usize>, T, const N: usize> PruningTable<S, T, N>
 where
-    [Depth; factorial(N)]: Sized,
+    [Depth; N]: Sized,
 {
     pub fn new<const M: usize>(
         goal: S,
-        generators: &[T; M],
+        generators: [T; M],
         transition: impl Fn(&S, &T) -> S,
     ) -> Self {
-        let mut table: Box<[u8; factorial(N)]> = vec![Depth::MAX; factorial(N)]
-            .into_boxed_slice()
-            .try_into()
-            .unwrap();
+        let mut table: Box<[u8; N]> = vec![Depth::MAX; N].into_boxed_slice().try_into().unwrap();
 
         table[goal.into()] = 0;
 
