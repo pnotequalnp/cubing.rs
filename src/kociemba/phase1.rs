@@ -10,7 +10,6 @@ const C_ORI: u8 = 3;
 const E_COUNT: usize = 12;
 const E_ORI: u8 = 2;
 const S_COUNT: usize = 4;
-const S_SLOTS: usize = 12;
 const MOVE_COUNT: usize = 18;
 pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
     ori::Array::new([
@@ -453,14 +452,20 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
 pub struct Cube {
     corners: ori::OrientationCoord<C_COUNT, C_ORI>,
     edges: ori::OrientationCoord<E_COUNT, E_ORI>,
+    slice: ori::CombinationCoord<E_COUNT, S_COUNT>,
 }
 
 impl Cube {
     pub fn new(
         corners: ori::OrientationCoord<C_COUNT, C_ORI>,
         edges: ori::OrientationCoord<E_COUNT, E_ORI>,
+        slice: ori::CombinationCoord<E_COUNT, S_COUNT>,
     ) -> Self {
-        Self { corners, edges }
+        Self {
+            corners,
+            edges,
+            slice,
+        }
     }
 
     pub fn create_table() -> Table {
@@ -513,8 +518,13 @@ impl From<FaceTurn> for Cube {
 
         let corners = C_MOVES[ix].o_coordinate();
         let edges = E_MOVES[ix].o_coordinate();
+        let slice = E_MOVES[ix].c_coordinate();
 
-        Cube { corners, edges }
+        Cube {
+            corners,
+            edges,
+            slice,
+        }
     }
 }
 
@@ -529,13 +539,18 @@ impl FromIterator<FaceTurn> for Cube {
                 |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
             );
 
-        Self::new(corners.o_coordinate(), edges.o_coordinate())
+        Self::new(
+            corners.o_coordinate(),
+            edges.o_coordinate(),
+            edges.c_coordinate(),
+        )
     }
 }
 
 pub struct Table(
     ori::OrientationTable<C_COUNT, C_ORI, MOVE_COUNT>,
     ori::OrientationTable<E_COUNT, E_ORI, MOVE_COUNT>,
+    ori::CombinationTable<E_COUNT, S_COUNT, MOVE_COUNT>,
 );
 
 impl Table {
@@ -543,16 +558,30 @@ impl Table {
         Self(
             ori::OrientationTable::new(&C_MOVES),
             ori::OrientationTable::new(&E_MOVES),
+            ori::CombinationTable::new(&E_MOVES),
         )
     }
 
-    pub fn lookup(&self, Cube { corners, edges }: Cube, index: usize) -> Cube {
-        let Self(c_table, e_table) = self;
+    pub fn lookup(
+        &self,
+        Cube {
+            corners,
+            edges,
+            slice,
+        }: Cube,
+        index: usize,
+    ) -> Cube {
+        let Self(c_table, e_table, s_table) = self;
 
         let corners = c_table.lookup(corners, index);
         let edges = e_table.lookup(edges, index);
+        let slice = s_table.lookup(slice, index);
 
-        Cube { corners, edges }
+        Cube {
+            corners,
+            edges,
+            slice,
+        }
     }
 }
 
@@ -562,14 +591,21 @@ pub struct PruningTable(
 );
 
 impl PruningTable {
-    pub fn new(Table(c_table, e_table): &Table) -> Self {
+    pub fn new(Table(c_table, e_table, s_table): &Table) -> Self {
         Self(
             ori::OrientationPruning::new(c_table),
             ori::OrientationPruning::new(e_table),
         )
     }
 
-    pub fn lookup(&self, Cube { corners, edges }: Cube) -> Depth {
+    pub fn lookup(
+        &self,
+        Cube {
+            corners,
+            edges,
+            slice,
+        }: Cube,
+    ) -> Depth {
         let PruningTable(c_table, e_table) = self;
 
         let corners = c_table.lookup(corners);
@@ -670,6 +706,61 @@ mod tests {
             assert_eq!(
                 ori::OrientationCoord::default(),
                 array.permute(array).o_coordinate()
+            );
+        }
+    }
+
+    #[test]
+    pub fn zero_combinations() {
+        assert_eq!(
+            ori::CombinationCoord::try_from(0).unwrap(),
+            ori::Array::<E_COUNT, E_ORI>::new([
+                (8, 0),
+                (9, 0),
+                (10, 0),
+                (11, 0),
+                (0, 0),
+                (1, 0),
+                (2, 0),
+                (3, 0),
+                (4, 0),
+                (5, 0),
+                (6, 0),
+                (7, 0)
+            ])
+            .c_coordinate::<S_COUNT>()
+        );
+    }
+
+    #[test]
+    pub fn max_combinations() {
+        for ix in (1..18).step_by(3) {
+            let cm = E_MOVES[ix].c_coordinate::<S_COUNT>();
+            assert_eq!(
+                ori::CombinationCoord::default(),
+                cm,
+                "{:?}: {:?}",
+                FaceTurn::from(ix),
+                E_MOVES[ix]
+            );
+        }
+
+        for ix in [0, 2, 12, 14].iter() {
+            let array = &E_MOVES[*ix];
+            assert_eq!(
+                ori::CombinationCoord::default(),
+                array.c_coordinate::<S_COUNT>(),
+            );
+        }
+
+        for ix in [3, 5, 6, 8, 9, 11, 15, 17].iter() {
+            let array = &E_MOVES[*ix];
+            assert_ne!(
+                ori::CombinationCoord::default(),
+                array.c_coordinate::<S_COUNT>(),
+                "{}: {:?}",
+                FaceTurn::from(*ix),
+                array.c_coordinate::<S_COUNT>()
             );
         }
     }

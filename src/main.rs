@@ -25,27 +25,33 @@ fn kociemba() {
     let pruning_table = Phase1::create_pruning_table(&move_table);
     println!("Generated move table in {:?}\n", now.elapsed());
 
-    let superflip = vec![U, R2, F, B, R, B2, R, U2, L, B2, R, U3, D3, R2, F, R3, L, B2, U2, F2];
-    // let superflip = vec![L, B, U, R2, R, R, U2, R, U3, R2, F, R3, U2, F2];
-    // let scramble = vec![R2, U3, F2, R, U2, R, U, R2, F3];
-    let scramble = superflip;
+    let scramble = vec![
+        U, R2, F, B, R, B2, R, U2, L, B2, R, U3, D3, R2, F, R3, L, B2, U2, F2,
+    ];
+    let _scramble = vec![R2, U3, F2, R, U2, R, U, R2, F3, F, D3, L, U3, R3, F2, D, R];
     let position = scramble.iter().cloned().collect::<Phase1>();
 
-    println!("Solving scramble [{}]...\n({:?})", FaceTurn::format_seq(scramble.into_iter()), position);
+    println!(
+        "Solving scramble [{}]...\n({:?})",
+        FaceTurn::format_seq(scramble.into_iter()),
+        position
+    );
     let now = Instant::now();
     if let Some((_path, moves)) = position.ida_star(
         &pruning_table,
         &move_table,
-        10,
+        15,
         Some(|depth| println!("Depth {:?} complete in {:?}", depth, now.clone().elapsed())),
     ) {
         println!("Solved in {:?}", now.elapsed());
-        let solution: Vec<FaceTurn> =
-            moves.into_iter().map(FaceTurn::from).collect();
+
+        let solution: Vec<FaceTurn> = moves.into_iter().map(FaceTurn::from).collect();
 
         println!("[{}]", FaceTurn::format_seq(solution.into_iter()));
+
+        // println!("Path: {:?}", path);
     } else {
-        println!("No solution found in {:?}", now.elapsed());
+        println!("No solution found");
     }
 }
 
@@ -67,7 +73,7 @@ fn corner_cube() {
 
     println!("Solving scramble {:?}...", scramble);
     let now = Instant::now();
-    let path = position.ida_star(
+    let _path = position.ida_star(
         &pruning_table,
         &move_table,
         10,

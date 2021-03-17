@@ -1,5 +1,5 @@
 use crate::pruning;
-use crate::util::{factorial, power};
+use crate::util::{binomial, factorial, power};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
@@ -7,6 +7,7 @@ use core::iter::Product;
 
 type Element = u8;
 type Orientation = u8;
+type CCoordWidth = u16;
 type OCoordWidth = u16;
 type PCoordWidth = u32;
 
@@ -133,6 +134,26 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         }
 
         OrientationCoord(t)
+    }
+
+    pub const fn c_coordinate<const K: usize>(&self) -> CombinationCoord<N, K> {
+        let Self(cm) = self;
+
+        let mut t: CCoordWidth = 0;
+        let mut r = K;
+
+        let mut ix = N - 1;
+        while ix != usize::MAX {
+            if cm[ix].0 as usize >= N - K {
+                t += binomial(ix, r) as CCoordWidth;
+                r -= 1;
+            };
+            ix = ix.wrapping_sub(1);
+        }
+
+        debug_assert!((t as usize) < binomial(N, K));
+
+        CombinationCoord(t)
     }
 
     pub const fn coordinate(&self) -> Coordinate<N, M> {
@@ -294,6 +315,63 @@ impl<const N: usize> From<PermutationCoord<N>> for usize {
     }
 }
 
+// Due to const generics limitations, currently the elements of interest must be the last `K`
+// elements in the array representation. This should change when Rust improves const generics
+// support.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CombinationCoord<const N: usize, const K: usize>(CCoordWidth);
+
+impl<const N: usize, const K: usize> Default for CombinationCoord<N, K> {
+    fn default() -> Self {
+        Self((binomial(N, K) - 1) as CCoordWidth)
+    }
+}
+
+impl<const N: usize, const K: usize> CombinationCoord<N, K> {
+    pub fn array<const M: Orientation>(self) -> Array<N, M> {
+        let CombinationCoord(mut t) = self;
+        let Array(mut cm) = Array::<N, M>::IDENTITY;
+        let mut p = (N - K..N).rev();
+        let mut np = (0..N - K).rev();
+
+        let mut r = K;
+        for ix in (0..N).rev() {
+            let b = binomial(ix, r) as CCoordWidth;
+            if t >= b {
+                cm[ix].0 = p.next().unwrap() as Element;
+                t -= b;
+                r -= 1;
+            } else {
+                cm[ix].0 = np.next().unwrap() as Element;
+            }
+        }
+
+        Array(cm)
+    }
+
+    fn all() -> impl Iterator<Item = Self> {
+        (0..binomial(N, K)).map(|x| CombinationCoord(x as CCoordWidth))
+    }
+}
+
+impl<const N: usize, const K: usize> From<CombinationCoord<N, K>> for usize {
+    fn from(CombinationCoord(t): CombinationCoord<N, K>) -> Self {
+        t as usize
+    }
+}
+
+impl<const N: usize, const K: usize> TryFrom<usize> for CombinationCoord<N, K> {
+    type Error = ();
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        if value < binomial(N, K) {
+            Ok(Self(value as CCoordWidth))
+        } else {
+            Err(())
+        }
+    }
+}
+
 pub struct OrientationTable<const N: usize, const M: Orientation, const S: usize>(
     Box<[OrientationCoord<N, M>; power(M, N - 1) * S]>,
 )
@@ -377,6 +455,50 @@ where
         permutation_index: usize,
     ) -> PermutationCoord<N> {
         let PermutationTable(table) = self;
+        let position_index: usize = position.into();
+        table[position_index * S + permutation_index]
+    }
+}
+
+pub struct CombinationTable<const N: usize, const K: usize, const S: usize>(
+    Box<[CombinationCoord<N, K>; binomial(N, K) * S]>,
+)
+where
+    [CombinationCoord<N, K>; binomial(N, K) * S]: Sized;
+
+impl<const N: usize, const K: usize, const S: usize> CombinationTable<N, K, S>
+where
+    [CombinationCoord<N, K>; binomial(N, K) * S]: Sized,
+{
+    /// Create a new table from a slice of generators. The table is based on the index of the
+    /// permutations in the argument, and it is your responsibility to track them, as you will need
+    /// them to look up coordinates with `transition`.
+    pub fn new<const M: Orientation>(permutations: &[Array<N, M>; S]) -> Self {
+        let mut table: Box<[CombinationCoord<N, K>; binomial(N, K) * S]> =
+            vec![CombinationCoord(0); binomial(N, K) * S]
+                .into_boxed_slice()
+                .try_into()
+                .unwrap();
+
+        for position in CombinationCoord::<N, K>::all() {
+            for (ix, permutation) in permutations.iter().enumerate() {
+                let position_index: usize = position.into();
+                table[position_index * S + ix] =
+                    position.array().permute(permutation).c_coordinate();
+            }
+        }
+
+        CombinationTable(table)
+    }
+
+    /// Look up the coordinate resulting from permuting `position` with the permutation at index
+    /// `permutation_index` in the slice originally passed to `new` when constructing this table.
+    pub fn lookup(
+        &self,
+        position: CombinationCoord<N, K>,
+        permutation_index: usize,
+    ) -> CombinationCoord<N, K> {
+        let CombinationTable(table) = self;
         let position_index: usize = position.into();
         table[position_index * S + permutation_index]
     }
