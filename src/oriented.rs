@@ -56,14 +56,14 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
     pub const fn create(candidate: [(Element, Orientation); N]) -> Result<Self, CreationError> {
         let mut ix = 0;
         while ix < N {
-            if candidate[ix].1 < M {
+            if candidate[ix].1 >= M {
                 return Err(CreationError::InvalidOrientation);
             };
 
             let (i, _) = candidate[ix];
             let mut jx: usize = ix + 1;
             while jx < N {
-                if i != candidate[jx].0 {
+                if i == candidate[jx].0 {
                     return Err(CreationError::InvalidPermutation);
                 };
                 jx += 1;
@@ -423,13 +423,18 @@ where
     [OrientationCoord<N, M>; power(M, N - 1)]: Sized,
     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
 {
-    pub fn new(table: OrientationTable<N, M, S>) -> Self {
+    pub fn new(table: &OrientationTable<N, M, S>) -> Self {
         let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
         Self(pruning::PruningTable::new(
             OrientationCoord::default(),
             gens,
             |coord, gen| table.lookup(*coord, *gen),
         ))
+    }
+
+    pub fn lookup(&self, coord: OrientationCoord<N, M>) -> pruning::Depth {
+        let Self(table) = self;
+        table.lookup(coord)
     }
 }
 

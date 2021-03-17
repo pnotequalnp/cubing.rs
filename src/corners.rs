@@ -98,16 +98,6 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (7, 0),
     ]), // F'
 ];
-// const MOVE_CUBES: [Cube; MOVE_COUNT] = {
-//     let mut cubes = [Cube::default(); MOVE_COUNT];
-
-//     let mut ix = 0;
-//     while ix < MOVE_COUNT {
-//         cubes[ix] = Cube(MOVES[ix].coordinate());
-//     };
-
-//     cubes
-// };
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Cube(pub ori::Coordinate<8, 3>);
@@ -140,6 +130,7 @@ impl From<FaceTurn> for Cube {
             FaceTurn::F => 6,
             FaceTurn::F2 => 7,
             FaceTurn::F3 => 8,
+            _ => panic!("Not a 2x2 move")
         };
 
         Cube(MOVES[ix].coordinate())
