@@ -6,4 +6,3 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-rayon = { version = "1.5", optional = true }
