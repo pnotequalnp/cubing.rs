@@ -15,10 +15,7 @@ impl<S: Copy + Default + Into<usize> + TryFrom<usize>, const N: usize> Table<S, 
 where
     [Depth; N]: Sized,
 {
-    pub fn new<T, const M: usize>(
-        generators: &[T; M],
-        transition: impl Fn(S, &T) -> S,
-    ) -> Self {
+    pub fn new<T, const M: usize>(generators: &[T; M], transition: impl Fn(S, &T) -> S) -> Self {
         let mut table: Box<[u8; N]> = vec![Depth::MAX; N].into_boxed_slice().try_into().unwrap();
 
         table[S::default().into()] = 0;
@@ -55,8 +52,12 @@ where
     pub fn lookup(&self, position: S) -> Depth {
         let Table(table, _) = self;
         #[cfg(debug_assertions)]
-        { table[position.into()] }
+        {
+            table[position.into()]
+        }
         #[cfg(not(debug_assertions))]
-        unsafe { *table.get_unchecked(position.into()) }
+        unsafe {
+            *table.get_unchecked(position.into())
+        }
     }
 }

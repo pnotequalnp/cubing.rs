@@ -157,7 +157,7 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         CombinationCoord(t)
     }
 
-    pub fn truncate<const K: usize>(&self) -> Result<Array::<K, M>, CreationError> {
+    pub fn truncate<const K: usize>(&self) -> Result<Array<K, M>, CreationError> {
         debug_assert!(K < N, "Cannot truncate to longer array");
 
         let Self(long_array) = self;
@@ -165,7 +165,7 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         Array::<K, M>::create(short_array)
     }
 
-    pub fn drop<const K: usize>(&self) -> Result<Array::<K, M>, CreationError> {
+    pub fn drop<const K: usize>(&self) -> Result<Array<K, M>, CreationError> {
         debug_assert!(K < N, "Cannot drop more than array");
 
         let Self(long_array) = self;

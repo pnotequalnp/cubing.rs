@@ -6,3 +6,11 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports", "real_blackbox"] }
+once_cell = "1.7.2"
+
+[[bench]]
+name = "kociemba"
+harness = false

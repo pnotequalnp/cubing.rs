@@ -1,8 +1,9 @@
 pub mod phase1;
 pub mod phase2;
 
+use crate::core::search::{ida_iter, Depth};
 use crate::rubiks::{Cube, FaceTurn};
-use rubiks_rs::search::{ida_iter, Depth};
+use alloc::vec::Vec;
 
 pub use phase1::Cube as Phase1;
 pub use phase2::Cube as Phase2;

@@ -64,8 +64,12 @@ where
         let column = generator_index;
         let row: usize = t.into();
         #[cfg(debug_assertions)]
-        { self.0[row * G + column] }
+        {
+            self.0[row * G + column]
+        }
         #[cfg(not(debug_assertions))]
-        unsafe { *self.0.get_unchecked(row * G + column) }
+        unsafe {
+            *self.0.get_unchecked(row * G + column)
+        }
     }
 }

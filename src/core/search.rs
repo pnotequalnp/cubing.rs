@@ -123,7 +123,10 @@ impl<T: Search> DFSIterator<'_, T> {
     fn scan(&mut self) -> Option<<Self as Iterator>::Item> {
         let goal = self.goal;
         let nodes = &mut self.nodes;
-        if let Some((vertex, edge)) = self.future.find(|(v, _)| { *nodes += 1; *v == goal}) {
+        if let Some((vertex, edge)) = self.future.find(|(v, _)| {
+            *nodes += 1;
+            *v == goal
+        }) {
             let mut path = self
                 .path
                 .iter()

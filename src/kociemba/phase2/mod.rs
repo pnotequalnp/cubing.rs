@@ -1,16 +1,16 @@
 mod moves;
 
+use crate::core::definitions as def;
+use crate::core::pruning;
+use crate::core::search::{Depth, Search};
+use crate::core::transition as trans;
 use crate::rubiks::FaceTurn;
-use rubiks_rs::definitions as def;
-use rubiks_rs::pruning;
-use rubiks_rs::search::Depth;
-use rubiks_rs::search::Search;
-use rubiks_rs::transition as trans;
-use rubiks_rs::util::count;
+use crate::util::count;
+use alloc::vec::Vec;
+use core::cmp::max;
+use core::convert::TryFrom;
+use core::iter::FromIterator;
 use moves::*;
-use std::cmp::max;
-use std::convert::TryFrom;
-use std::iter::FromIterator;
 
 type Corners = def::PermutationCoord<CORNERS>;
 type Edges = def::PermutationCoord<EDGES>;
@@ -64,7 +64,7 @@ impl Cube {
 }
 
 impl Search for Cube {
-    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
+    type Iter = alloc::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -119,7 +119,11 @@ impl FromIterator<FaceTurn> for Cube {
             .map(|x| x.expect("Invalid move for Kociemba phase 2."))
             .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix], &SLICE_MOVES[ix]))
             .fold(
-                (def::Array::default(), def::Array::default(), def::Array::default()),
+                (
+                    def::Array::default(),
+                    def::Array::default(),
+                    def::Array::default(),
+                ),
                 |(u, v, w), (x, y, z)| (u.permute(&x), v.permute(&y), w.permute(&z)),
             );
 
@@ -201,4 +205,3 @@ impl PruningTable {
         max(max(corners, edges), slice)
     }
 }
-
