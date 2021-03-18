@@ -1,4 +1,5 @@
 use crate::pruning;
+use crate::transition as trans;
 use crate::util::{binomial, factorial, power};
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
@@ -223,6 +224,8 @@ impl<const N: usize, const M: Orientation> TryFrom<usize> for Coordinate<N, M> {
 pub struct OrientationCoord<const N: usize, const M: Orientation>(OCoordWidth);
 
 impl<const N: usize, const M: Orientation> OrientationCoord<N, M> {
+    pub const BOUND: usize = power(M, N - 1);
+
     fn raw_array(self) -> [Orientation; N] {
         let OrientationCoord(mut t) = self;
 
@@ -249,8 +252,12 @@ impl<const N: usize, const M: Orientation> OrientationCoord<N, M> {
         Array(self.raw_array().map(|x| (nats.next().unwrap(), x)))
     }
 
-    fn all() -> impl Iterator<Item = Self> {
+    pub fn all() -> impl Iterator<Item = Self> {
         (0..power(M, N - 1)).map(|x| OrientationCoord(x as OCoordWidth))
+    }
+
+    pub fn permute(self, array: &Array<N, M>) -> Self {
+        self.array().permute(array).o_coordinate()
     }
 }
 
@@ -274,6 +281,8 @@ impl<const N: usize, const M: Orientation> TryFrom<usize> for OrientationCoord<N
 pub struct PermutationCoord<const N: usize>(PCoordWidth);
 
 impl<const N: usize> PermutationCoord<N> {
+    pub const BOUND: usize = factorial(N);
+
     const fn raw_array(self) -> [Element; N] {
         let PermutationCoord(mut t) = self;
         let mut pm: [Element; N] = [0; N];
@@ -327,6 +336,8 @@ impl<const N: usize, const K: usize> Default for CombinationCoord<N, K> {
 }
 
 impl<const N: usize, const K: usize> CombinationCoord<N, K> {
+    pub const BOUND: usize = binomial(N, K);
+
     pub fn array<const M: Orientation>(self) -> Array<N, M> {
         let CombinationCoord(mut t) = self;
         let Array(mut cm) = Array::<N, M>::IDENTITY;
@@ -348,8 +359,12 @@ impl<const N: usize, const K: usize> CombinationCoord<N, K> {
         Array(cm)
     }
 
-    fn all() -> impl Iterator<Item = Self> {
+    pub fn all() -> impl Iterator<Item = Self> {
         (0..binomial(N, K)).map(|x| CombinationCoord(x as CCoordWidth))
+    }
+
+    pub fn permute<const M: Orientation>(self, array: &Array<N, M>) -> Self {
+        self.array().permute(array).c_coordinate()
     }
 }
 
@@ -371,126 +386,6 @@ impl<const N: usize, const K: usize> TryFrom<usize> for CombinationCoord<N, K> {
     }
 }
 
-pub struct PermutationTable<const N: usize, const S: usize>(
-    crate::transition::Table<PermutationCoord<N>, { factorial(N) }, S>,
-)
-where
-    [PermutationCoord<N>; factorial(N) * S]: Sized;
-
-impl<const N: usize, const S: usize> PermutationTable<N, S>
-where
-    [PermutationCoord<N>; factorial(N) * S]: Sized,
-{
-    pub fn new<const M: Orientation>(generators: &[Array<N, M>; S]) -> Self {
-        let table = crate::transition::Table::new(
-            generators,
-            PermutationCoord::<N>::all(),
-            |coord, gen| coord.array().permute(gen).p_coordinate(),
-        );
-
-        Self(table)
-    }
-
-    pub fn lookup(
-        &self,
-        coord: PermutationCoord<N>,
-        generator_index: usize,
-    ) -> PermutationCoord<N> {
-        let Self(table) = self;
-        table.lookup(coord, generator_index)
-    }
-}
-
-pub struct OrientationTable<const N: usize, const M: Orientation, const S: usize>(
-    crate::transition::Table<OrientationCoord<N, M>, { power(M, N - 1) }, S>,
-)
-where
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized;
-
-impl<const N: usize, const M: Orientation, const S: usize> OrientationTable<N, M, S>
-where
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
-{
-    pub fn new(generators: &[Array<N, M>; S]) -> Self {
-        let table = crate::transition::Table::new(
-            generators,
-            OrientationCoord::<N, M>::all(),
-            |coord, gen| coord.array().permute(gen).o_coordinate(),
-        );
-
-        Self(table)
-    }
-
-    pub fn lookup(
-        &self,
-        coord: OrientationCoord<N, M>,
-        generator_index: usize,
-    ) -> OrientationCoord<N, M> {
-        let Self(table) = self;
-        table.lookup(coord, generator_index)
-    }
-}
-
-pub struct CombinationTable<const N: usize, const K: usize, const S: usize>(
-    crate::transition::Table<CombinationCoord<N, K>, { binomial(N, K) }, S>,
-)
-where
-    [CombinationCoord<N, K>; binomial(N, K) * S]: Sized;
-
-impl<const N: usize, const K: usize, const S: usize> CombinationTable<N, K, S>
-where
-    [CombinationCoord<N, K>; binomial(N, K) * S]: Sized,
-{
-    pub fn new<const M: Orientation>(generators: &[Array<N, M>; S]) -> Self {
-        let table = crate::transition::Table::new(
-            generators,
-            CombinationCoord::<N, K>::all(),
-            |coord, gen| coord.array().permute(gen).c_coordinate(),
-        );
-
-        Self(table)
-    }
-
-    pub fn lookup(
-        &self,
-        coord: CombinationCoord<N, K>,
-        generator_index: usize,
-    ) -> CombinationCoord<N, K> {
-        let Self(table) = self;
-        table.lookup(coord, generator_index)
-    }
-}
-
-pub struct FullTable<const N: usize, const M: Orientation, const S: usize>(
-    OrientationTable<N, M, S>,
-    PermutationTable<N, S>,
-)
-where
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
-    [PermutationCoord<N>; factorial(N) * S]: Sized;
-
-impl<const N: usize, const M: Orientation, const S: usize> FullTable<N, M, S>
-where
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
-    [PermutationCoord<N>; factorial(N) * S]: Sized,
-{
-    pub fn new(permutations: &[Array<N, M>; S]) -> Self {
-        Self(
-            OrientationTable::new(permutations),
-            PermutationTable::new(permutations),
-        )
-    }
-
-    pub fn lookup(&self, position: Coordinate<N, M>, permutation_index: usize) -> Coordinate<N, M> {
-        let Self(o_table, p_table) = self;
-        let Coordinate(o_coord, p_coord) = position;
-        Coordinate(
-            o_table.lookup(o_coord, permutation_index),
-            p_table.lookup(p_coord, permutation_index),
-        )
-    }
-}
-
 pub struct OrientationPruning<const N: usize, const M: Orientation, const S: usize>(
     pruning::PruningTable<OrientationCoord<N, M>, usize, { power(M, N - 1) }>,
 )
@@ -500,9 +395,11 @@ where
 impl<const N: usize, const M: Orientation, const S: usize> OrientationPruning<N, M, S>
 where
     [OrientationCoord<N, M>; power(M, N - 1)]: Sized,
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
+    [OrientationCoord<N, M>; OrientationCoord::<N, M>::BOUND * S]: Sized,
 {
-    pub fn new(table: &OrientationTable<N, M, S>) -> Self {
+    pub fn new(
+        table: &trans::Table<OrientationCoord<N, M>, { OrientationCoord::<N, M>::BOUND }, S>,
+    ) -> Self {
         let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
         Self(pruning::PruningTable::new(
             OrientationCoord::default(),
@@ -517,30 +414,30 @@ where
     }
 }
 
-pub struct FullPruning<const N: usize, const M: Orientation, const S: usize>(
-    pruning::PruningTable<Coordinate<N, M>, usize, { power(M, N - 1) * factorial(N) }>,
-)
-where
-    [OrientationCoord<N, M>; power(M, N - 1) * factorial(N)]: Sized;
+// pub struct FullPruning<const N: usize, const M: Orientation, const S: usize>(
+//     pruning::PruningTable<Coordinate<N, M>, usize, { power(M, N - 1) * factorial(N) }>,
+// )
+// where
+//     [OrientationCoord<N, M>; power(M, N - 1) * factorial(N)]: Sized;
 
-impl<const N: usize, const M: Orientation, const S: usize> FullPruning<N, M, S>
-where
-    [Coordinate<N, M>; power(M, N - 1) * factorial(N)]: Sized,
-    [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
-    [PermutationCoord<N>; factorial(N) * S]: Sized,
-{
-    pub fn new(table: &FullTable<N, M, S>) -> Self {
-        let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
-        Self(pruning::PruningTable::new(
-            Coordinate::default(),
-            gens,
-            |coord, gen| table.lookup(*coord, *gen),
-        ))
-    }
+// impl<const N: usize, const M: Orientation, const S: usize> FullPruning<N, M, S>
+// where
+//     [Coordinate<N, M>; power(M, N - 1) * factorial(N)]: Sized,
+//     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
+//     [PermutationCoord<N>; factorial(N) * S]: Sized,
+// {
+//     pub fn new(table: &FullTable<N, M, S>) -> Self {
+//         let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
+//         Self(pruning::PruningTable::new(
+//             Coordinate::default(),
+//             gens,
+//             |coord, gen| table.lookup(*coord, *gen),
+//         ))
+//     }
 
-    pub fn lookup(&self, position: Coordinate<N, M>) -> pruning::Depth {
-        let Self(table) = self;
+//     pub fn lookup(&self, position: Coordinate<N, M>) -> pruning::Depth {
+//         let Self(table) = self;
 
-        table.lookup(position)
-    }
-}
+//         table.lookup(position)
+//     }
+// }

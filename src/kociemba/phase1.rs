@@ -1,9 +1,14 @@
 use crate::turns::FaceTurn;
 use cube::definitions as def;
-use cube::search::Depth;
+// use cube::search::Depth;
 use cube::search::Search;
-use std::cmp::max;
+use cube::transition as trans;
+// use std::cmp::max;
 use std::iter::FromIterator;
+
+type Corners = def::OrientationCoord<C_COUNT, C_ORI>;
+type Edges = def::OrientationCoord<E_COUNT, E_ORI>;
+type Slice = def::CombinationCoord<E_COUNT, S_COUNT>;
 
 const C_COUNT: usize = 8;
 const C_ORI: u8 = 3;
@@ -450,9 +455,9 @@ pub const E_MOVES: [def::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Cube {
-    corners: def::OrientationCoord<C_COUNT, C_ORI>,
-    edges: def::OrientationCoord<E_COUNT, E_ORI>,
-    slice: def::CombinationCoord<E_COUNT, S_COUNT>,
+    corners: Corners,
+    edges: Edges,
+    slice: Slice,
 }
 
 impl Cube {
@@ -472,18 +477,19 @@ impl Cube {
         Table::new()
     }
 
-    pub fn create_pruning_table(move_table: &Table) -> PruningTable {
-        PruningTable::new(move_table)
-    }
+    // pub fn create_pruning_table(move_table: &Table) -> PruningTable {
+    //     PruningTable::new(move_table)
+    // }
 }
 
 impl Search for Cube {
     type Edge = usize;
-    type HeuristicData = PruningTable;
+    type HeuristicData = ();
     type TransitionData = Table;
 
-    fn heuristic(self, table: &Self::HeuristicData) -> cube::search::Depth {
-        table.lookup(self)
+    fn heuristic(self, _table: &Self::HeuristicData) -> cube::search::Depth {
+        // table.lookup(self)
+        0
     }
 
     fn transition(self, table: &Self::TransitionData) -> Vec<(Self, Self::Edge)> {
@@ -548,17 +554,17 @@ impl FromIterator<FaceTurn> for Cube {
 }
 
 pub struct Table(
-    def::OrientationTable<C_COUNT, C_ORI, MOVE_COUNT>,
-    def::OrientationTable<E_COUNT, E_ORI, MOVE_COUNT>,
-    def::CombinationTable<E_COUNT, S_COUNT, MOVE_COUNT>,
+    trans::Table<Corners, { Corners::BOUND }, MOVE_COUNT>,
+    trans::Table<Edges, { Edges::BOUND }, MOVE_COUNT>,
+    trans::Table<Slice, { Slice::BOUND }, MOVE_COUNT>,
 );
 
 impl Table {
     pub fn new() -> Self {
         Self(
-            def::OrientationTable::new(&C_MOVES),
-            def::OrientationTable::new(&E_MOVES),
-            def::CombinationTable::new(&E_MOVES),
+            trans::Table::new(&C_MOVES, Corners::all(), Corners::permute),
+            trans::Table::new(&E_MOVES, Edges::all(), Edges::permute),
+            trans::Table::new(&E_MOVES, Slice::all(), Slice::permute),
         )
     }
 
@@ -585,35 +591,35 @@ impl Table {
     }
 }
 
-pub struct PruningTable(
-    def::OrientationPruning<C_COUNT, C_ORI, MOVE_COUNT>,
-    def::OrientationPruning<E_COUNT, E_ORI, MOVE_COUNT>,
-);
+// pub struct PruningTable(
+//     def::OrientationPruning<C_COUNT, C_ORI, MOVE_COUNT>,
+//     def::OrientationPruning<E_COUNT, E_ORI, MOVE_COUNT>,
+// );
 
-impl PruningTable {
-    pub fn new(Table(c_table, e_table, s_table): &Table) -> Self {
-        Self(
-            def::OrientationPruning::new(c_table),
-            def::OrientationPruning::new(e_table),
-        )
-    }
+// impl PruningTable {
+//     pub fn new(Table(c_table, e_table, _s_table): &Table) -> Self {
+//         Self(
+//             def::OrientationPruning::new(c_table),
+//             def::OrientationPruning::new(e_table),
+//         )
+//     }
 
-    pub fn lookup(
-        &self,
-        Cube {
-            corners,
-            edges,
-            slice,
-        }: Cube,
-    ) -> Depth {
-        let PruningTable(c_table, e_table) = self;
+//     pub fn lookup(
+//         &self,
+//         Cube {
+//             corners,
+//             edges,
+//             slice: _,
+//         }: Cube,
+//     ) -> Depth {
+//         let PruningTable(c_table, e_table) = self;
 
-        let corners = c_table.lookup(corners);
-        let edges = e_table.lookup(edges);
+//         let corners = c_table.lookup(corners);
+//         let edges = e_table.lookup(edges);
 
-        max(corners, edges)
-    }
-}
+//         max(corners, edges)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
