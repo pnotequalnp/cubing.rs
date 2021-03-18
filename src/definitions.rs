@@ -320,6 +320,16 @@ impl<const N: usize> From<PermutationCoord<N>> for usize {
     }
 }
 
+impl<const N: usize> TryFrom<usize> for PermutationCoord<N> {
+    type Error = ();
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        (value < factorial(N))
+            .then(|| Self(value as PCoordWidth))
+            .ok_or(())
+    }
+}
+
 // Due to const generics limitations, currently the elements of interest must be the last `K`
 // elements in the array representation. This should change when Rust improves const generics
 // support.
