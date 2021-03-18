@@ -38,6 +38,26 @@ fn kociemba() {
     ];
     let _scramble = vec![R2, U3, F2, R, U2, R, U, R2, F3, F, D3, L, U3, R3, F2, D, R];
 
+    use kociemba::Phase1;
+    let position = scramble.iter().cloned().collect::<Phase1>();
+    let mut solver = rubiks_rs::search::dfs_iter(
+        position,
+        Phase1::default(),
+        &pruning_table_1,
+        &move_table_1,
+        11,
+    );
+
+    let now = Instant::now();
+    let _sol = solver.next();
+    let time = now.elapsed();
+    println!(
+        "Nodes: {:?}, time: {:?}, NPS: {:?}\n",
+        solver.nodes(),
+        time,
+        solver.nodes() as f64 / time.as_secs_f64(),
+    );
+
     println!(
         "Solving scramble [{}]...",
         FaceTurn::format_seq(scramble.iter().cloned()),
