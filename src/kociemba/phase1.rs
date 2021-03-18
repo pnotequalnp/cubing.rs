@@ -1,5 +1,5 @@
 use crate::turns::FaceTurn;
-use cube::oriented as ori;
+use cube::definitions as def;
 use cube::search::Depth;
 use cube::search::Search;
 use std::cmp::max;
@@ -11,8 +11,8 @@ const E_COUNT: usize = 12;
 const E_ORI: u8 = 2;
 const S_COUNT: usize = 4;
 const MOVE_COUNT: usize = 18;
-pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
-    ori::Array::new([
+pub const C_MOVES: [def::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
+    def::Array::new([
         (3, 0),
         (0, 0),
         (1, 0),
@@ -22,7 +22,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U
-    ori::Array::new([
+    def::Array::new([
         (2, 0),
         (3, 0),
         (0, 0),
@@ -32,7 +32,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U2
-    ori::Array::new([
+    def::Array::new([
         (1, 0),
         (2, 0),
         (3, 0),
@@ -42,7 +42,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U'
-    ori::Array::new([
+    def::Array::new([
         (4, 2),
         (1, 0),
         (2, 0),
@@ -52,7 +52,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (3, 2),
     ]), // R
-    ori::Array::new([
+    def::Array::new([
         (7, 0),
         (1, 0),
         (2, 0),
@@ -62,7 +62,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (0, 0),
     ]), // R2
-    ori::Array::new([
+    def::Array::new([
         (3, 2),
         (1, 0),
         (2, 0),
@@ -72,7 +72,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (4, 2),
     ]), // R'
-    ori::Array::new([
+    def::Array::new([
         (1, 1),
         (5, 2),
         (2, 0),
@@ -82,7 +82,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // F
-    ori::Array::new([
+    def::Array::new([
         (5, 0),
         (4, 0),
         (2, 0),
@@ -92,7 +92,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // F2
-    ori::Array::new([
+    def::Array::new([
         (4, 1),
         (0, 2),
         (2, 0),
@@ -102,7 +102,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // F'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (2, 1),
         (6, 2),
@@ -112,7 +112,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (5, 1),
         (7, 0),
     ]), // L
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (6, 0),
         (5, 0),
@@ -122,7 +122,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (1, 0),
         (7, 0),
     ]), // L2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (5, 1),
         (1, 2),
@@ -132,7 +132,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (2, 1),
         (7, 0),
     ]), // L'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -142,7 +142,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (7, 0),
         (4, 0),
     ]), // D
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -152,7 +152,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (4, 0),
         (5, 0),
     ]), // D2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -162,7 +162,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (5, 0),
         (6, 0),
     ]), // D'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (3, 1),
@@ -172,7 +172,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (2, 2),
         (6, 1),
     ]), // B
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (7, 0),
@@ -182,7 +182,7 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (3, 0),
         (2, 0),
     ]), // B2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (6, 1),
@@ -193,8 +193,8 @@ pub const C_MOVES: [ori::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
         (3, 1),
     ]), // B'
 ];
-pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
-    ori::Array::new([
+pub const E_MOVES: [def::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
+    def::Array::new([
         (3, 0),
         (0, 0),
         (1, 0),
@@ -208,7 +208,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // U
-    ori::Array::new([
+    def::Array::new([
         (2, 0),
         (3, 0),
         (0, 0),
@@ -222,7 +222,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // U2
-    ori::Array::new([
+    def::Array::new([
         (1, 0),
         (2, 0),
         (3, 0),
@@ -236,7 +236,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // U'
-    ori::Array::new([
+    def::Array::new([
         (8, 0),
         (1, 0),
         (2, 0),
@@ -250,7 +250,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (0, 0),
     ]), // R
-    ori::Array::new([
+    def::Array::new([
         (4, 0),
         (1, 0),
         (2, 0),
@@ -264,7 +264,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (8, 0),
     ]), // R2
-    ori::Array::new([
+    def::Array::new([
         (11, 0),
         (1, 0),
         (2, 0),
@@ -278,7 +278,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (4, 0),
     ]), // R'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (9, 1),
         (2, 0),
@@ -292,7 +292,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // F
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (5, 0),
         (2, 0),
@@ -306,7 +306,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // F2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (8, 1),
         (2, 0),
@@ -320,7 +320,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // F'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (10, 0),
@@ -334,7 +334,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (6, 0),
         (11, 0),
     ]), // L
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (6, 0),
@@ -348,7 +348,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (9, 0),
         (11, 0),
     ]), // L2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (9, 0),
@@ -362,7 +362,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (2, 0),
         (11, 0),
     ]), // L'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -376,7 +376,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // D
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -390,7 +390,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // D2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -404,7 +404,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (10, 0),
         (11, 0),
     ]), // D'
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -418,7 +418,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (3, 1),
         (7, 1),
     ]), // B
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -432,7 +432,7 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
         (11, 0),
         (10, 0),
     ]), // B2
-    ori::Array::new([
+    def::Array::new([
         (0, 0),
         (1, 0),
         (2, 0),
@@ -450,16 +450,16 @@ pub const E_MOVES: [ori::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Cube {
-    corners: ori::OrientationCoord<C_COUNT, C_ORI>,
-    edges: ori::OrientationCoord<E_COUNT, E_ORI>,
-    slice: ori::CombinationCoord<E_COUNT, S_COUNT>,
+    corners: def::OrientationCoord<C_COUNT, C_ORI>,
+    edges: def::OrientationCoord<E_COUNT, E_ORI>,
+    slice: def::CombinationCoord<E_COUNT, S_COUNT>,
 }
 
 impl Cube {
     pub fn new(
-        corners: ori::OrientationCoord<C_COUNT, C_ORI>,
-        edges: ori::OrientationCoord<E_COUNT, E_ORI>,
-        slice: ori::CombinationCoord<E_COUNT, S_COUNT>,
+        corners: def::OrientationCoord<C_COUNT, C_ORI>,
+        edges: def::OrientationCoord<E_COUNT, E_ORI>,
+        slice: def::CombinationCoord<E_COUNT, S_COUNT>,
     ) -> Self {
         Self {
             corners,
@@ -535,7 +535,7 @@ impl FromIterator<FaceTurn> for Cube {
             .map(usize::from)
             .map(|ix| (&C_MOVES[ix], &E_MOVES[ix]))
             .fold(
-                (ori::Array::default(), ori::Array::default()),
+                (def::Array::default(), def::Array::default()),
                 |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
             );
 
@@ -548,17 +548,17 @@ impl FromIterator<FaceTurn> for Cube {
 }
 
 pub struct Table(
-    ori::OrientationTable<C_COUNT, C_ORI, MOVE_COUNT>,
-    ori::OrientationTable<E_COUNT, E_ORI, MOVE_COUNT>,
-    ori::CombinationTable<E_COUNT, S_COUNT, MOVE_COUNT>,
+    def::OrientationTable<C_COUNT, C_ORI, MOVE_COUNT>,
+    def::OrientationTable<E_COUNT, E_ORI, MOVE_COUNT>,
+    def::CombinationTable<E_COUNT, S_COUNT, MOVE_COUNT>,
 );
 
 impl Table {
     pub fn new() -> Self {
         Self(
-            ori::OrientationTable::new(&C_MOVES),
-            ori::OrientationTable::new(&E_MOVES),
-            ori::CombinationTable::new(&E_MOVES),
+            def::OrientationTable::new(&C_MOVES),
+            def::OrientationTable::new(&E_MOVES),
+            def::CombinationTable::new(&E_MOVES),
         )
     }
 
@@ -586,15 +586,15 @@ impl Table {
 }
 
 pub struct PruningTable(
-    ori::OrientationPruning<C_COUNT, C_ORI, MOVE_COUNT>,
-    ori::OrientationPruning<E_COUNT, E_ORI, MOVE_COUNT>,
+    def::OrientationPruning<C_COUNT, C_ORI, MOVE_COUNT>,
+    def::OrientationPruning<E_COUNT, E_ORI, MOVE_COUNT>,
 );
 
 impl PruningTable {
     pub fn new(Table(c_table, e_table, s_table): &Table) -> Self {
         Self(
-            ori::OrientationPruning::new(c_table),
-            ori::OrientationPruning::new(e_table),
+            def::OrientationPruning::new(c_table),
+            def::OrientationPruning::new(e_table),
         )
     }
 
@@ -628,49 +628,49 @@ mod tests {
             let x2 = &C_MOVES[ix + 1];
             let x3 = &C_MOVES[ix + 2];
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x1.permute(x3),
                 "{:?}: {:?} {:?}",
                 FaceTurn::from(ix),
                 x1,
                 x3
             );
-            assert_eq!(ori::Array::default(), x3.permute(x1));
-            assert_eq!(ori::Array::default(), x2.permute(x2));
+            assert_eq!(def::Array::default(), x3.permute(x1));
+            assert_eq!(def::Array::default(), x2.permute(x2));
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x1.permute(x1).permute(x1).permute(x1)
             );
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x3.permute(x3).permute(x3).permute(x3)
             );
-            assert_eq!(ori::Array::default(), x2.permute(x1).permute(x1));
-            assert_eq!(ori::Array::default(), x2.permute(x3).permute(x3));
+            assert_eq!(def::Array::default(), x2.permute(x1).permute(x1));
+            assert_eq!(def::Array::default(), x2.permute(x3).permute(x3));
 
             let x1 = &E_MOVES[ix];
             let x2 = &E_MOVES[ix + 1];
             let x3 = &E_MOVES[ix + 2];
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x1.permute(x3),
                 "{:?}: {:?} {:?}",
                 FaceTurn::from(ix),
                 x1,
                 x3
             );
-            assert_eq!(ori::Array::default(), x3.permute(x1));
-            assert_eq!(ori::Array::default(), x2.permute(x2));
+            assert_eq!(def::Array::default(), x3.permute(x1));
+            assert_eq!(def::Array::default(), x2.permute(x2));
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x1.permute(x1).permute(x1).permute(x1)
             );
             assert_eq!(
-                ori::Array::default(),
+                def::Array::default(),
                 x3.permute(x3).permute(x3).permute(x3)
             );
-            assert_eq!(ori::Array::default(), x2.permute(x1).permute(x1));
-            assert_eq!(ori::Array::default(), x2.permute(x3).permute(x3));
+            assert_eq!(def::Array::default(), x2.permute(x1).permute(x1));
+            assert_eq!(def::Array::default(), x2.permute(x3).permute(x3));
         }
     }
 
@@ -679,7 +679,7 @@ mod tests {
         for ix in (1..18).step_by(3) {
             let co = C_MOVES[ix].o_coordinate();
             assert_eq!(
-                ori::OrientationCoord::default(),
+                def::OrientationCoord::default(),
                 co,
                 "{:?}",
                 FaceTurn::from(ix)
@@ -687,7 +687,7 @@ mod tests {
 
             let eo = E_MOVES[ix].o_coordinate();
             assert_eq!(
-                ori::OrientationCoord::default(),
+                def::OrientationCoord::default(),
                 eo,
                 "{:?}: {:?}",
                 FaceTurn::from(ix),
@@ -698,13 +698,13 @@ mod tests {
         for ix in 0..18 {
             let array = &C_MOVES[ix];
             assert_eq!(
-                ori::OrientationCoord::default(),
+                def::OrientationCoord::default(),
                 array.permute(array).o_coordinate()
             );
 
             let array = &E_MOVES[ix];
             assert_eq!(
-                ori::OrientationCoord::default(),
+                def::OrientationCoord::default(),
                 array.permute(array).o_coordinate()
             );
         }
@@ -713,8 +713,8 @@ mod tests {
     #[test]
     pub fn zero_combinations() {
         assert_eq!(
-            ori::CombinationCoord::try_from(0).unwrap(),
-            ori::Array::<E_COUNT, E_ORI>::new([
+            def::CombinationCoord::try_from(0).unwrap(),
+            def::Array::<E_COUNT, E_ORI>::new([
                 (8, 0),
                 (9, 0),
                 (10, 0),
@@ -737,7 +737,7 @@ mod tests {
         for ix in (1..18).step_by(3) {
             let cm = E_MOVES[ix].c_coordinate::<S_COUNT>();
             assert_eq!(
-                ori::CombinationCoord::default(),
+                def::CombinationCoord::default(),
                 cm,
                 "{:?}: {:?}",
                 FaceTurn::from(ix),
@@ -748,7 +748,7 @@ mod tests {
         for ix in [0, 2, 12, 14].iter() {
             let array = &E_MOVES[*ix];
             assert_eq!(
-                ori::CombinationCoord::default(),
+                def::CombinationCoord::default(),
                 array.c_coordinate::<S_COUNT>(),
             );
         }
@@ -756,7 +756,7 @@ mod tests {
         for ix in [3, 5, 6, 8, 9, 11, 15, 17].iter() {
             let array = &E_MOVES[*ix];
             assert_ne!(
-                ori::CombinationCoord::default(),
+                def::CombinationCoord::default(),
                 array.c_coordinate::<S_COUNT>(),
                 "{}: {:?}",
                 FaceTurn::from(*ix),
@@ -767,7 +767,7 @@ mod tests {
 
     #[test]
     pub fn max_orientations() {
-        let array = ori::Array::<8, 3>::create([
+        let array = def::Array::<8, 3>::create([
             (0, 2),
             (1, 2),
             (2, 2),
@@ -778,11 +778,11 @@ mod tests {
             (7, 1),
         ])
         .unwrap();
-        let coord = ori::OrientationCoord::try_from(2186).unwrap();
+        let coord = def::OrientationCoord::try_from(2186).unwrap();
         assert_eq!(coord, array.o_coordinate());
         assert_eq!(array, coord.array());
 
-        let array = ori::Array::<12, 2>::create([
+        let array = def::Array::<12, 2>::create([
             (0, 1),
             (1, 1),
             (2, 1),
@@ -797,7 +797,7 @@ mod tests {
             (11, 1),
         ])
         .unwrap();
-        let coord = ori::OrientationCoord::try_from(2047).unwrap();
+        let coord = def::OrientationCoord::try_from(2047).unwrap();
         assert_eq!(coord, array.o_coordinate());
         assert_eq!(array, coord.array());
     }

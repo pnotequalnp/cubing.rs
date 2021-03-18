@@ -9,8 +9,7 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod oriented;
-pub mod permutations;
+pub mod definitions;
 pub mod pruning;
 pub mod search;
 mod util;

@@ -1,13 +1,13 @@
 use crate::turns::FaceTurn;
 use core::iter::FromIterator;
-use cube::oriented as ori;
+use cube::definitions as def;
 use cube::search::{Depth, Search};
 
 const CORNERS: usize = 8;
 const ORIENTATIONS: u8 = 3;
 const MOVE_COUNT: usize = 9;
-pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
-    ori::Array::new([
+pub const MOVES: [def::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
+    def::Array::new([
         (3, 0),
         (0, 0),
         (1, 0),
@@ -17,7 +17,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U
-    ori::Array::new([
+    def::Array::new([
         (2, 0),
         (3, 0),
         (0, 0),
@@ -27,7 +27,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U2
-    ori::Array::new([
+    def::Array::new([
         (1, 0),
         (2, 0),
         (3, 0),
@@ -37,7 +37,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // U'
-    ori::Array::new([
+    def::Array::new([
         (4, 2),
         (1, 0),
         (2, 0),
@@ -47,7 +47,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (3, 2),
     ]), // R
-    ori::Array::new([
+    def::Array::new([
         (7, 0),
         (1, 0),
         (2, 0),
@@ -57,7 +57,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (0, 0),
     ]), // R2
-    ori::Array::new([
+    def::Array::new([
         (3, 2),
         (1, 0),
         (2, 0),
@@ -67,7 +67,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (4, 2),
     ]), // R'
-    ori::Array::new([
+    def::Array::new([
         (1, 1),
         (5, 2),
         (2, 0),
@@ -77,7 +77,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // F
-    ori::Array::new([
+    def::Array::new([
         (5, 0),
         (4, 0),
         (2, 0),
@@ -87,7 +87,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
         (6, 0),
         (7, 0),
     ]), // F2
-    ori::Array::new([
+    def::Array::new([
         (4, 1),
         (0, 2),
         (2, 0),
@@ -100,7 +100,7 @@ pub const MOVES: [ori::Array<CORNERS, ORIENTATIONS>; MOVE_COUNT] = [
 ];
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Cube(pub ori::Coordinate<8, 3>);
+pub struct Cube(pub def::Coordinate<8, 3>);
 
 impl Search for Cube {
     type Edge = usize;
@@ -139,7 +139,7 @@ impl From<FaceTurn> for Cube {
 
 impl FromIterator<FaceTurn> for Cube {
     fn from_iter<T: IntoIterator<Item = FaceTurn>>(iter: T) -> Self {
-        let a: ori::Array<8, 3> = iter
+        let a: def::Array<8, 3> = iter
             .into_iter()
             .map(Self::from)
             .map(|Cube(c)| c.array())
@@ -166,11 +166,11 @@ impl Cube {
     }
 }
 
-pub struct Table(pub ori::FullTable<CORNERS, ORIENTATIONS, MOVE_COUNT>);
+pub struct Table(pub def::FullTable<CORNERS, ORIENTATIONS, MOVE_COUNT>);
 
 impl Table {
     pub fn new() -> Self {
-        Self(ori::FullTable::new(&MOVES))
+        Self(def::FullTable::new(&MOVES))
     }
 
     pub fn lookup(&self, position: Cube, permutation_index: usize) -> Cube {
@@ -180,11 +180,11 @@ impl Table {
     }
 }
 
-pub struct PruningTable(ori::FullPruning<CORNERS, ORIENTATIONS, MOVE_COUNT>);
+pub struct PruningTable(def::FullPruning<CORNERS, ORIENTATIONS, MOVE_COUNT>);
 
 impl PruningTable {
     pub fn new(Table(table): &Table) -> Self {
-        Self(ori::FullPruning::new(table))
+        Self(def::FullPruning::new(table))
     }
 
     pub fn lookup(&self, Cube(coord): Cube) -> Depth {
