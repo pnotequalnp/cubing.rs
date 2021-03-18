@@ -1,45 +1,51 @@
-#[allow(dead_code)]
+mod moves;
+
+pub use moves::CORNER_MOVES;
+pub use moves::EDGE_MOVES;
+
+pub const CORNERS: usize = 8;
+pub const TWISTS: u8 = 3;
+pub const EDGES: usize = 12;
+pub const FLIPS: u8 = 2;
+pub const BELT_EDGES: usize = 4;
+pub const MOVE_COUNT: usize = 18;
+pub const GENERATORS: [usize; MOVE_COUNT] = {
+    let mut gens = [0; MOVE_COUNT];
+
+    let mut ix = 0;
+    while ix < MOVE_COUNT {
+        gens[ix] = ix;
+        ix += 1;
+    }
+
+    gens
+};
+
+#[rustfmt::skip]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaceTurn {
-    U,
-    U2,
-    U3,
-    R,
-    R2,
-    R3,
-    F,
-    F2,
-    F3,
-    L,
-    L2,
-    L3,
-    D,
-    D2,
-    D3,
-    B,
-    B2,
-    B3,
+    U, U2, U3, R, R2, R3, F, F2, F3, L, L2, L3, D, D2, D3, B, B2, B3
 }
 
 impl std::fmt::Display for FaceTurn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let symbol = match self {
-            FaceTurn::U  => "U",
+            FaceTurn::U => "U",
             FaceTurn::U2 => "U2",
             FaceTurn::U3 => "U'",
-            FaceTurn::R  => "R",
+            FaceTurn::R => "R",
             FaceTurn::R2 => "R2",
             FaceTurn::R3 => "R'",
-            FaceTurn::F  => "F",
+            FaceTurn::F => "F",
             FaceTurn::F2 => "F2",
             FaceTurn::F3 => "F'",
-            FaceTurn::L  => "L",
+            FaceTurn::L => "L",
             FaceTurn::L2 => "L2",
             FaceTurn::L3 => "L'",
-            FaceTurn::D  => "D",
+            FaceTurn::D => "D",
             FaceTurn::D2 => "D2",
             FaceTurn::D3 => "D'",
-            FaceTurn::B  => "B",
+            FaceTurn::B => "B",
             FaceTurn::B2 => "B2",
             FaceTurn::B3 => "B'",
         };

@@ -1,4 +1,4 @@
-use crate::turns::FaceTurn;
+use crate::rubiks::*;
 use cube::definitions as def;
 use cube::pruning;
 use cube::search::Depth;
@@ -7,463 +7,9 @@ use cube::transition as trans;
 use std::cmp::max;
 use std::iter::FromIterator;
 
-type Corners = def::OrientationCoord<C_COUNT, C_ORI>;
-type Edges = def::OrientationCoord<E_COUNT, E_ORI>;
-type Slice = def::CombinationCoord<E_COUNT, S_COUNT>;
-
-const C_COUNT: usize = 8;
-const C_ORI: u8 = 3;
-const E_COUNT: usize = 12;
-const E_ORI: u8 = 2;
-const S_COUNT: usize = 4;
-const MOVE_COUNT: usize = 18;
-const GENERATORS: [usize; MOVE_COUNT] = {
-    let mut gens = [0; MOVE_COUNT];
-
-    let mut ix = 0;
-    while ix < MOVE_COUNT {
-        gens[ix] = ix;
-        ix += 1;
-    }
-
-    gens
-};
-pub const C_MOVES: [def::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
-    def::Array::new([
-        (3, 0),
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-    ]), // U
-    def::Array::new([
-        (2, 0),
-        (3, 0),
-        (0, 0),
-        (1, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-    ]), // U2
-    def::Array::new([
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (0, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-    ]), // U'
-    def::Array::new([
-        (4, 2),
-        (1, 0),
-        (2, 0),
-        (0, 1),
-        (7, 1),
-        (5, 0),
-        (6, 0),
-        (3, 2),
-    ]), // R
-    def::Array::new([
-        (7, 0),
-        (1, 0),
-        (2, 0),
-        (4, 0),
-        (3, 0),
-        (5, 0),
-        (6, 0),
-        (0, 0),
-    ]), // R2
-    def::Array::new([
-        (3, 2),
-        (1, 0),
-        (2, 0),
-        (7, 1),
-        (0, 1),
-        (5, 0),
-        (6, 0),
-        (4, 2),
-    ]), // R'
-    def::Array::new([
-        (1, 1),
-        (5, 2),
-        (2, 0),
-        (3, 0),
-        (0, 2),
-        (4, 1),
-        (6, 0),
-        (7, 0),
-    ]), // F
-    def::Array::new([
-        (5, 0),
-        (4, 0),
-        (2, 0),
-        (3, 0),
-        (1, 0),
-        (0, 0),
-        (6, 0),
-        (7, 0),
-    ]), // F2
-    def::Array::new([
-        (4, 1),
-        (0, 2),
-        (2, 0),
-        (3, 0),
-        (5, 2),
-        (1, 1),
-        (6, 0),
-        (7, 0),
-    ]), // F'
-    def::Array::new([
-        (0, 0),
-        (2, 1),
-        (6, 2),
-        (3, 0),
-        (4, 0),
-        (1, 2),
-        (5, 1),
-        (7, 0),
-    ]), // L
-    def::Array::new([
-        (0, 0),
-        (6, 0),
-        (5, 0),
-        (3, 0),
-        (4, 0),
-        (2, 0),
-        (1, 0),
-        (7, 0),
-    ]), // L2
-    def::Array::new([
-        (0, 0),
-        (5, 1),
-        (1, 2),
-        (3, 0),
-        (4, 0),
-        (6, 2),
-        (2, 1),
-        (7, 0),
-    ]), // L'
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (4, 0),
-    ]), // D
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (6, 0),
-        (7, 0),
-        (4, 0),
-        (5, 0),
-    ]), // D2
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (7, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-    ]), // D'
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (3, 1),
-        (7, 2),
-        (4, 0),
-        (5, 0),
-        (2, 2),
-        (6, 1),
-    ]), // B
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (7, 0),
-        (6, 0),
-        (4, 0),
-        (5, 0),
-        (3, 0),
-        (2, 0),
-    ]), // B2
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (6, 1),
-        (2, 2),
-        (4, 0),
-        (5, 0),
-        (7, 2),
-        (3, 1),
-    ]), // B'
-];
-pub const E_MOVES: [def::Array<E_COUNT, E_ORI>; MOVE_COUNT] = [
-    def::Array::new([
-        (3, 0),
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // U
-    def::Array::new([
-        (2, 0),
-        (3, 0),
-        (0, 0),
-        (1, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // U2
-    def::Array::new([
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (0, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // U'
-    def::Array::new([
-        (8, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (11, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (4, 0),
-        (9, 0),
-        (10, 0),
-        (0, 0),
-    ]), // R
-    def::Array::new([
-        (4, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (0, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (11, 0),
-        (9, 0),
-        (10, 0),
-        (8, 0),
-    ]), // R2
-    def::Array::new([
-        (11, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (8, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (0, 0),
-        (9, 0),
-        (10, 0),
-        (4, 0),
-    ]), // R'
-    def::Array::new([
-        (0, 0),
-        (9, 1),
-        (2, 0),
-        (3, 0),
-        (4, 0),
-        (8, 1),
-        (6, 0),
-        (7, 0),
-        (1, 1),
-        (5, 1),
-        (10, 0),
-        (11, 0),
-    ]), // F
-    def::Array::new([
-        (0, 0),
-        (5, 0),
-        (2, 0),
-        (3, 0),
-        (4, 0),
-        (1, 0),
-        (6, 0),
-        (7, 0),
-        (9, 0),
-        (8, 0),
-        (10, 0),
-        (11, 0),
-    ]), // F2
-    def::Array::new([
-        (0, 0),
-        (8, 1),
-        (2, 0),
-        (3, 0),
-        (4, 0),
-        (9, 1),
-        (6, 0),
-        (7, 0),
-        (5, 1),
-        (1, 1),
-        (10, 0),
-        (11, 0),
-    ]), // F'
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (10, 0),
-        (3, 0),
-        (4, 0),
-        (5, 0),
-        (9, 0),
-        (7, 0),
-        (8, 0),
-        (2, 0),
-        (6, 0),
-        (11, 0),
-    ]), // L
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (6, 0),
-        (3, 0),
-        (4, 0),
-        (5, 0),
-        (2, 0),
-        (7, 0),
-        (8, 0),
-        (10, 0),
-        (9, 0),
-        (11, 0),
-    ]), // L2
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (9, 0),
-        (3, 0),
-        (4, 0),
-        (5, 0),
-        (10, 0),
-        (7, 0),
-        (8, 0),
-        (6, 0),
-        (2, 0),
-        (11, 0),
-    ]), // L'
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
-        (4, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // D
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (6, 0),
-        (7, 0),
-        (4, 0),
-        (5, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // D2
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (7, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (8, 0),
-        (9, 0),
-        (10, 0),
-        (11, 0),
-    ]), // D'
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (11, 1),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (10, 1),
-        (8, 0),
-        (9, 0),
-        (3, 1),
-        (7, 1),
-    ]), // B
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (7, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (3, 0),
-        (8, 0),
-        (9, 0),
-        (11, 0),
-        (10, 0),
-    ]), // B2
-    def::Array::new([
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (10, 1),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (11, 1),
-        (8, 0),
-        (9, 0),
-        (7, 1),
-        (3, 1),
-    ]), // B'
-];
+type Corners = def::OrientationCoord<CORNERS, TWISTS>;
+type Edges = def::OrientationCoord<EDGES, FLIPS>;
+type Slice = def::CombinationCoord<EDGES, BELT_EDGES>;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Cube {
@@ -474,9 +20,9 @@ pub struct Cube {
 
 impl Cube {
     pub fn new(
-        corners: def::OrientationCoord<C_COUNT, C_ORI>,
-        edges: def::OrientationCoord<E_COUNT, E_ORI>,
-        slice: def::CombinationCoord<E_COUNT, S_COUNT>,
+        corners: def::OrientationCoord<CORNERS, TWISTS>,
+        edges: def::OrientationCoord<EDGES, FLIPS>,
+        slice: def::CombinationCoord<EDGES, BELT_EDGES>,
     ) -> Self {
         Self {
             corners,
@@ -533,9 +79,9 @@ impl From<FaceTurn> for Cube {
             FaceTurn::B3 => 17,
         };
 
-        let corners = C_MOVES[ix].o_coordinate();
-        let edges = E_MOVES[ix].o_coordinate();
-        let slice = E_MOVES[ix].c_coordinate();
+        let corners = CORNER_MOVES[ix].o_coordinate();
+        let edges = EDGE_MOVES[ix].o_coordinate();
+        let slice = EDGE_MOVES[ix].c_coordinate();
 
         Cube {
             corners,
@@ -550,7 +96,7 @@ impl FromIterator<FaceTurn> for Cube {
         let (corners, edges) = iter
             .into_iter()
             .map(usize::from)
-            .map(|ix| (&C_MOVES[ix], &E_MOVES[ix]))
+            .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix]))
             .fold(
                 (def::Array::default(), def::Array::default()),
                 |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
@@ -573,9 +119,9 @@ pub struct Table(
 impl Table {
     pub fn new() -> Self {
         Self(
-            trans::Table::new(&C_MOVES, Corners::all(), Corners::permute),
-            trans::Table::new(&E_MOVES, Edges::all(), Edges::permute),
-            trans::Table::new(&E_MOVES, Slice::all(), Slice::permute),
+            trans::Table::new(&CORNER_MOVES, Corners::all(), Corners::permute),
+            trans::Table::new(&EDGE_MOVES, Edges::all(), Edges::permute),
+            trans::Table::new(&EDGE_MOVES, Slice::all(), Slice::permute),
         )
     }
 
@@ -644,9 +190,9 @@ mod tests {
     #[test]
     pub fn array_cancellation() {
         for ix in (0..18).step_by(3) {
-            let x1 = &C_MOVES[ix];
-            let x2 = &C_MOVES[ix + 1];
-            let x3 = &C_MOVES[ix + 2];
+            let x1 = &CORNER_MOVES[ix];
+            let x2 = &CORNER_MOVES[ix + 1];
+            let x3 = &CORNER_MOVES[ix + 2];
             assert_eq!(
                 def::Array::default(),
                 x1.permute(x3),
@@ -668,9 +214,9 @@ mod tests {
             assert_eq!(def::Array::default(), x2.permute(x1).permute(x1));
             assert_eq!(def::Array::default(), x2.permute(x3).permute(x3));
 
-            let x1 = &E_MOVES[ix];
-            let x2 = &E_MOVES[ix + 1];
-            let x3 = &E_MOVES[ix + 2];
+            let x1 = &EDGE_MOVES[ix];
+            let x2 = &EDGE_MOVES[ix + 1];
+            let x3 = &EDGE_MOVES[ix + 2];
             assert_eq!(
                 def::Array::default(),
                 x1.permute(x3),
@@ -697,7 +243,7 @@ mod tests {
     #[test]
     pub fn zero_orientations() {
         for ix in (1..18).step_by(3) {
-            let co = C_MOVES[ix].o_coordinate();
+            let co = CORNER_MOVES[ix].o_coordinate();
             assert_eq!(
                 def::OrientationCoord::default(),
                 co,
@@ -705,24 +251,24 @@ mod tests {
                 FaceTurn::from(ix)
             );
 
-            let eo = E_MOVES[ix].o_coordinate();
+            let eo = EDGE_MOVES[ix].o_coordinate();
             assert_eq!(
                 def::OrientationCoord::default(),
                 eo,
                 "{:?}: {:?}",
                 FaceTurn::from(ix),
-                E_MOVES[ix]
+                EDGE_MOVES[ix]
             );
         }
 
         for ix in 0..18 {
-            let array = &C_MOVES[ix];
+            let array = &CORNER_MOVES[ix];
             assert_eq!(
                 def::OrientationCoord::default(),
                 array.permute(array).o_coordinate()
             );
 
-            let array = &E_MOVES[ix];
+            let array = &EDGE_MOVES[ix];
             assert_eq!(
                 def::OrientationCoord::default(),
                 array.permute(array).o_coordinate()
@@ -734,7 +280,7 @@ mod tests {
     pub fn zero_combinations() {
         assert_eq!(
             def::CombinationCoord::try_from(0).unwrap(),
-            def::Array::<E_COUNT, E_ORI>::new([
+            def::Array::<EDGES, FLIPS>::new([
                 (8, 0),
                 (9, 0),
                 (10, 0),
@@ -748,39 +294,39 @@ mod tests {
                 (6, 0),
                 (7, 0)
             ])
-            .c_coordinate::<S_COUNT>()
+            .c_coordinate::<BELT_EDGES>()
         );
     }
 
     #[test]
     pub fn max_combinations() {
         for ix in (1..18).step_by(3) {
-            let cm = E_MOVES[ix].c_coordinate::<S_COUNT>();
+            let cm = EDGE_MOVES[ix].c_coordinate::<BELT_EDGES>();
             assert_eq!(
                 def::CombinationCoord::default(),
                 cm,
                 "{:?}: {:?}",
                 FaceTurn::from(ix),
-                E_MOVES[ix]
+                EDGE_MOVES[ix]
             );
         }
 
         for ix in [0, 2, 12, 14].iter() {
-            let array = &E_MOVES[*ix];
+            let array = &EDGE_MOVES[*ix];
             assert_eq!(
                 def::CombinationCoord::default(),
-                array.c_coordinate::<S_COUNT>(),
+                array.c_coordinate::<BELT_EDGES>(),
             );
         }
 
         for ix in [3, 5, 6, 8, 9, 11, 15, 17].iter() {
-            let array = &E_MOVES[*ix];
+            let array = &EDGE_MOVES[*ix];
             assert_ne!(
                 def::CombinationCoord::default(),
-                array.c_coordinate::<S_COUNT>(),
+                array.c_coordinate::<BELT_EDGES>(),
                 "{}: {:?}",
                 FaceTurn::from(*ix),
-                array.c_coordinate::<S_COUNT>()
+                array.c_coordinate::<BELT_EDGES>()
             );
         }
     }
