@@ -1,6 +1,5 @@
 use crate::pruning;
 use crate::util::{binomial, factorial, power};
-use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::iter::Product;
@@ -372,8 +371,38 @@ impl<const N: usize, const K: usize> TryFrom<usize> for CombinationCoord<N, K> {
     }
 }
 
+pub struct PermutationTable<const N: usize, const S: usize>(
+    crate::transition::Table<PermutationCoord<N>, { factorial(N) }, S>,
+)
+where
+    [PermutationCoord<N>; factorial(N) * S]: Sized;
+
+impl<const N: usize, const S: usize> PermutationTable<N, S>
+where
+    [PermutationCoord<N>; factorial(N) * S]: Sized,
+{
+    pub fn new<const M: Orientation>(generators: &[Array<N, M>; S]) -> Self {
+        let table = crate::transition::Table::new(
+            generators,
+            PermutationCoord::<N>::all(),
+            |coord, gen| coord.array().permute(gen).p_coordinate(),
+        );
+
+        Self(table)
+    }
+
+    pub fn lookup(
+        &self,
+        coord: PermutationCoord<N>,
+        generator_index: usize,
+    ) -> PermutationCoord<N> {
+        let Self(table) = self;
+        table.lookup(coord, generator_index)
+    }
+}
+
 pub struct OrientationTable<const N: usize, const M: Orientation, const S: usize>(
-    Box<[OrientationCoord<N, M>; power(M, N - 1) * S]>,
+    crate::transition::Table<OrientationCoord<N, M>, { power(M, N - 1) }, S>,
 )
 where
     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized;
@@ -382,86 +411,28 @@ impl<const N: usize, const M: Orientation, const S: usize> OrientationTable<N, M
 where
     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
 {
-    /// Create a new table from a slice of generators. The table is based on the index of the
-    /// permutations in the argument, and it is your responsibility to track them, as you will need
-    /// them to look up coordinates with `transition`.
-    pub fn new(permutations: &[Array<N, M>; S]) -> Self {
-        let mut table: Box<[OrientationCoord<N, M>; power(M, N - 1) * S]> =
-            vec![OrientationCoord::<N, M>(0); power(M, N - 1) * S]
-                .into_boxed_slice()
-                .try_into()
-                .unwrap();
+    pub fn new(generators: &[Array<N, M>; S]) -> Self {
+        let table = crate::transition::Table::new(
+            generators,
+            OrientationCoord::<N, M>::all(),
+            |coord, gen| coord.array().permute(gen).o_coordinate(),
+        );
 
-        for position in OrientationCoord::<N, M>::all() {
-            for (ix, permutation) in permutations.iter().enumerate() {
-                let position_index: usize = position.into();
-                table[position_index * S + ix] =
-                    position.array().permute(permutation).coordinate().0;
-            }
-        }
-
-        OrientationTable(table)
+        Self(table)
     }
 
-    /// Look up the coordinate resulting from permuting `position` with the permutation at index
-    /// `permutation_index` in the slice originally passed to `new` when constructing this table.
     pub fn lookup(
         &self,
-        position: OrientationCoord<N, M>,
-        permutation_index: usize,
+        coord: OrientationCoord<N, M>,
+        generator_index: usize,
     ) -> OrientationCoord<N, M> {
-        let OrientationTable(table) = self;
-        let position_index: usize = position.into();
-        table[position_index * S + permutation_index]
-    }
-}
-
-pub struct PermutationTable<const N: usize, const M: Orientation, const S: usize>(
-    Box<[PermutationCoord<N>; factorial(N) * S]>,
-)
-where
-    [PermutationCoord<N>; factorial(N) * S]: Sized;
-
-impl<const N: usize, const M: Orientation, const S: usize> PermutationTable<N, M, S>
-where
-    [PermutationCoord<N>; factorial(N) * S]: Sized,
-{
-    /// Create a new table from a slice of generators. The table is based on the index of the
-    /// permutations in the argument, and it is your responsibility to track them, as you will need
-    /// them to look up coordinates with `transition`.
-    pub fn new(permutations: &[Array<N, M>; S]) -> Self {
-        let mut table: Box<[PermutationCoord<N>; factorial(N) * S]> =
-            vec![PermutationCoord::<N>(0); factorial(N) * S]
-                .into_boxed_slice()
-                .try_into()
-                .unwrap();
-
-        for position in PermutationCoord::<N>::all() {
-            for (ix, permutation) in permutations.iter().enumerate() {
-                let position_index: usize = position.into();
-                table[position_index * S + ix] =
-                    position.array().permute(permutation).coordinate().1;
-            }
-        }
-
-        PermutationTable(table)
-    }
-
-    /// Look up the coordinate resulting from permuting `position` with the permutation at index
-    /// `permutation_index` in the slice originally passed to `new` when constructing this table.
-    pub fn lookup(
-        &self,
-        position: PermutationCoord<N>,
-        permutation_index: usize,
-    ) -> PermutationCoord<N> {
-        let PermutationTable(table) = self;
-        let position_index: usize = position.into();
-        table[position_index * S + permutation_index]
+        let Self(table) = self;
+        table.lookup(coord, generator_index)
     }
 }
 
 pub struct CombinationTable<const N: usize, const K: usize, const S: usize>(
-    Box<[CombinationCoord<N, K>; binomial(N, K) * S]>,
+    crate::transition::Table<CombinationCoord<N, K>, { binomial(N, K) }, S>,
 )
 where
     [CombinationCoord<N, K>; binomial(N, K) * S]: Sized;
@@ -470,43 +441,29 @@ impl<const N: usize, const K: usize, const S: usize> CombinationTable<N, K, S>
 where
     [CombinationCoord<N, K>; binomial(N, K) * S]: Sized,
 {
-    /// Create a new table from a slice of generators. The table is based on the index of the
-    /// permutations in the argument, and it is your responsibility to track them, as you will need
-    /// them to look up coordinates with `transition`.
-    pub fn new<const M: Orientation>(permutations: &[Array<N, M>; S]) -> Self {
-        let mut table: Box<[CombinationCoord<N, K>; binomial(N, K) * S]> =
-            vec![CombinationCoord(0); binomial(N, K) * S]
-                .into_boxed_slice()
-                .try_into()
-                .unwrap();
+    pub fn new<const M: Orientation>(generators: &[Array<N, M>; S]) -> Self {
+        let table = crate::transition::Table::new(
+            generators,
+            CombinationCoord::<N, K>::all(),
+            |coord, gen| coord.array().permute(gen).c_coordinate(),
+        );
 
-        for position in CombinationCoord::<N, K>::all() {
-            for (ix, permutation) in permutations.iter().enumerate() {
-                let position_index: usize = position.into();
-                table[position_index * S + ix] =
-                    position.array().permute(permutation).c_coordinate();
-            }
-        }
-
-        CombinationTable(table)
+        Self(table)
     }
 
-    /// Look up the coordinate resulting from permuting `position` with the permutation at index
-    /// `permutation_index` in the slice originally passed to `new` when constructing this table.
     pub fn lookup(
         &self,
-        position: CombinationCoord<N, K>,
-        permutation_index: usize,
+        coord: CombinationCoord<N, K>,
+        generator_index: usize,
     ) -> CombinationCoord<N, K> {
-        let CombinationTable(table) = self;
-        let position_index: usize = position.into();
-        table[position_index * S + permutation_index]
+        let Self(table) = self;
+        table.lookup(coord, generator_index)
     }
 }
 
 pub struct FullTable<const N: usize, const M: Orientation, const S: usize>(
     OrientationTable<N, M, S>,
-    PermutationTable<N, M, S>,
+    PermutationTable<N, S>,
 )
 where
     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
