@@ -38,6 +38,10 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
             };
 
             let (i, _) = candidate[ix];
+            if i as usize >= N {
+                panic!("InvalidOrientation");
+            };
+
             let mut jx: usize = ix + 1;
             while jx < N {
                 if i == candidate[jx].0 {
@@ -311,6 +315,10 @@ impl<const N: usize> PermutationCoord<N> {
 
     pub fn all() -> impl Iterator<Item = Self> {
         (0..factorial(N)).map(|x| PermutationCoord(x as PCoordWidth))
+    }
+
+    pub fn permute<const M: Orientation>(self, array: &Array<N, M>) -> Self {
+        self.array().permute(array).p_coordinate()
     }
 }
 

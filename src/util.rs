@@ -43,6 +43,18 @@ pub const fn power(base: u8, exponent: usize) -> usize {
     t
 }
 
+pub const fn count<const N: usize>() -> [usize; N] {
+    let mut xs = [0; N];
+
+    let mut ix = 0;
+    while ix < N {
+        xs[ix] = ix;
+        ix += 1;
+    }
+
+    xs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

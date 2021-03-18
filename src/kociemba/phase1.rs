@@ -19,11 +19,7 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn new(
-        corners: def::OrientationCoord<CORNERS, TWISTS>,
-        edges: def::OrientationCoord<EDGES, FLIPS>,
-        slice: def::CombinationCoord<EDGES, BELT_EDGES>,
-    ) -> Self {
+    pub fn new(corners: Corners, edges: Edges, slice: Slice) -> Self {
         Self {
             corners,
             edges,
