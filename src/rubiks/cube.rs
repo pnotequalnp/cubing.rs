@@ -1,6 +1,6 @@
+use crate::core::definitions as def;
 use crate::rubiks::*;
-use rubiks_rs::definitions as def;
-use std::iter::FromIterator;
+use core::iter::FromIterator;
 
 type CornerPermutation = def::PermutationCoord<CORNERS>;
 type CornerOrientation = def::OrientationCoord<CORNERS, TWISTS>;

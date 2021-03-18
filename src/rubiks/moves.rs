@@ -1,5 +1,5 @@
 use super::*;
-use rubiks_rs::definitions as def;
+use crate::core::definitions as def;
 
 #[rustfmt::skip]
 pub const CORNER_MOVES: [def::Array<CORNERS, TWISTS>; MOVE_COUNT] = [

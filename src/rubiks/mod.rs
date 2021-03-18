@@ -1,10 +1,12 @@
 pub mod cube;
-mod moves;
+pub mod moves;
+pub mod positions;
 
-use rubiks_rs::util::count;
+use crate::util::count;
+use alloc::string::{String, ToString};
 
-pub use moves::*;
 pub use cube::Cube;
+pub use moves::*;
 
 pub const CORNERS: usize = 8;
 pub const TWISTS: u8 = 3;
@@ -20,8 +22,8 @@ pub enum FaceTurn {
     U, U2, U3, R, R2, R3, F, F2, F3, L, L2, L3, D, D2, D3, B, B2, B3
 }
 
-impl std::fmt::Display for FaceTurn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for FaceTurn {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let symbol = match self {
             FaceTurn::U => "U",
             FaceTurn::U2 => "U2",

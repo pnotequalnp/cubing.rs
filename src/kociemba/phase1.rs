@@ -1,11 +1,11 @@
+use crate::core::definitions as def;
+use crate::core::pruning;
+use crate::core::search::{Depth, Search};
+use crate::core::transition as trans;
 use crate::rubiks::*;
-use rubiks_rs::definitions as def;
-use rubiks_rs::pruning;
-use rubiks_rs::search::Depth;
-use rubiks_rs::search::Search;
-use rubiks_rs::transition as trans;
-use std::cmp::max;
-use std::iter::FromIterator;
+use alloc::vec::Vec;
+use core::cmp::max;
+use core::iter::FromIterator;
 
 type Corners = def::OrientationCoord<CORNERS, TWISTS>;
 type Edges = def::OrientationCoord<EDGES, FLIPS>;
@@ -37,7 +37,7 @@ impl Cube {
 }
 
 impl Search for Cube {
-    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
+    type Iter = alloc::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -181,7 +181,7 @@ impl PruningTable {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     use super::*;
 

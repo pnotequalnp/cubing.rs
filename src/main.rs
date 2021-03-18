@@ -1,11 +1,7 @@
 #![feature(array_map)]
-#![feature(iter_intersperse)]
 
-// mod corners;
-mod kociemba;
-mod rubiks;
-
-use rubiks::FaceTurn::{self, *};
+use rubiks_rs::kociemba;
+use rubiks_rs::rubiks::FaceTurn::{self, *};
 use std::time::Instant;
 
 fn main() {
