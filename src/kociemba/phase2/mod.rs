@@ -64,6 +64,7 @@ impl Cube {
 }
 
 impl Search for Cube {
+    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -72,10 +73,11 @@ impl Search for Cube {
         table.lookup(self)
     }
 
-    fn transition(self, table: &Self::TransitionData) -> Vec<(Self, Self::Edge)> {
+    fn transition(self, table: &Self::TransitionData) -> Self::Iter {
         (0..MOVE_COUNT)
             .map(|ix| (table.lookup(self, ix), ix))
-            .collect()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 
@@ -200,190 +202,3 @@ impl PruningTable {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::convert::TryFrom;
-
-//     use super::*;
-
-//     #[test]
-//     pub fn array_cancellation() {
-//         for ix in (0..18).step_by(3) {
-//             let x1 = &CORNER_MOVES[ix];
-//             let x2 = &CORNER_MOVES[ix + 1];
-//             let x3 = &CORNER_MOVES[ix + 2];
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x1.permute(x3),
-//                 "{:?}: {:?} {:?}",
-//                 FaceTurn::from(ix),
-//                 x1,
-//                 x3
-//             );
-//             assert_eq!(def::Array::default(), x3.permute(x1));
-//             assert_eq!(def::Array::default(), x2.permute(x2));
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x1.permute(x1).permute(x1).permute(x1)
-//             );
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x3.permute(x3).permute(x3).permute(x3)
-//             );
-//             assert_eq!(def::Array::default(), x2.permute(x1).permute(x1));
-//             assert_eq!(def::Array::default(), x2.permute(x3).permute(x3));
-
-//             let x1 = &EDGE_MOVES[ix];
-//             let x2 = &EDGE_MOVES[ix + 1];
-//             let x3 = &EDGE_MOVES[ix + 2];
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x1.permute(x3),
-//                 "{:?}: {:?} {:?}",
-//                 FaceTurn::from(ix),
-//                 x1,
-//                 x3
-//             );
-//             assert_eq!(def::Array::default(), x3.permute(x1));
-//             assert_eq!(def::Array::default(), x2.permute(x2));
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x1.permute(x1).permute(x1).permute(x1)
-//             );
-//             assert_eq!(
-//                 def::Array::default(),
-//                 x3.permute(x3).permute(x3).permute(x3)
-//             );
-//             assert_eq!(def::Array::default(), x2.permute(x1).permute(x1));
-//             assert_eq!(def::Array::default(), x2.permute(x3).permute(x3));
-//         }
-//     }
-
-//     #[test]
-//     pub fn zero_orientations() {
-//         for ix in (1..18).step_by(3) {
-//             let co = CORNER_MOVES[ix].o_coordinate();
-//             assert_eq!(
-//                 def::OrientationCoord::default(),
-//                 co,
-//                 "{:?}",
-//                 FaceTurn::from(ix)
-//             );
-
-//             let eo = EDGE_MOVES[ix].o_coordinate();
-//             assert_eq!(
-//                 def::OrientationCoord::default(),
-//                 eo,
-//                 "{:?}: {:?}",
-//                 FaceTurn::from(ix),
-//                 EDGE_MOVES[ix]
-//             );
-//         }
-
-//         for ix in 0..18 {
-//             let array = &CORNER_MOVES[ix];
-//             assert_eq!(
-//                 def::OrientationCoord::default(),
-//                 array.permute(array).o_coordinate()
-//             );
-
-//             let array = &EDGE_MOVES[ix];
-//             assert_eq!(
-//                 def::OrientationCoord::default(),
-//                 array.permute(array).o_coordinate()
-//             );
-//         }
-//     }
-
-//     #[test]
-//     pub fn zero_combinations() {
-//         assert_eq!(
-//             def::CombinationCoord::try_from(0).unwrap(),
-//             def::Array::<EDGES, FLIPS>::new([
-//                 (8, 0),
-//                 (9, 0),
-//                 (10, 0),
-//                 (11, 0),
-//                 (0, 0),
-//                 (1, 0),
-//                 (2, 0),
-//                 (3, 0),
-//                 (4, 0),
-//                 (5, 0),
-//                 (6, 0),
-//                 (7, 0)
-//             ])
-//             .c_coordinate::<BELT_EDGES>()
-//         );
-//     }
-
-//     #[test]
-//     pub fn max_combinations() {
-//         for ix in (1..18).step_by(3) {
-//             let cm = EDGE_MOVES[ix].c_coordinate::<BELT_EDGES>();
-//             assert_eq!(
-//                 def::CombinationCoord::default(),
-//                 cm,
-//                 "{:?}: {:?}",
-//                 FaceTurn::from(ix),
-//                 EDGE_MOVES[ix]
-//             );
-//         }
-
-//         for ix in [0, 2, 12, 14].iter() {
-//             let array = &EDGE_MOVES[*ix];
-//             assert_eq!(
-//                 def::CombinationCoord::default(),
-//                 array.c_coordinate::<BELT_EDGES>(),
-//             );
-//         }
-
-//         for ix in [3, 5, 6, 8, 9, 11, 15, 17].iter() {
-//             let array = &EDGE_MOVES[*ix];
-//             assert_ne!(
-//                 def::CombinationCoord::default(),
-//                 array.c_coordinate::<BELT_EDGES>(),
-//                 "{}: {:?}",
-//                 FaceTurn::from(*ix),
-//                 array.c_coordinate::<BELT_EDGES>()
-//             );
-//         }
-//     }
-
-//     #[test]
-//     pub fn max_orientations() {
-//         let array = def::Array::<8, 3>::create([
-//             (0, 2),
-//             (1, 2),
-//             (2, 2),
-//             (3, 2),
-//             (4, 2),
-//             (5, 2),
-//             (6, 2),
-//             (7, 1),
-//         ])
-//         .unwrap();
-//         let coord = def::OrientationCoord::try_from(2186).unwrap();
-//         assert_eq!(coord, array.o_coordinate());
-//         assert_eq!(array, coord.array());
-
-//         let array = def::Array::<12, 2>::create([
-//             (0, 1),
-//             (1, 1),
-//             (2, 1),
-//             (3, 1),
-//             (4, 1),
-//             (5, 1),
-//             (6, 1),
-//             (7, 1),
-//             (8, 1),
-//             (9, 1),
-//             (10, 1),
-//             (11, 1),
-//         ])
-//         .unwrap();
-//         let coord = def::OrientationCoord::try_from(2047).unwrap();
-//         assert_eq!(coord, array.o_coordinate());
-//         assert_eq!(array, coord.array());
-//     }
-// }

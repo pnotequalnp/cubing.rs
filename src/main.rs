@@ -45,11 +45,11 @@ fn kociemba() {
     let now = Instant::now();
     let solution = kociemba::solve(
         scramble,
-        move_table_1,
-        move_table_2,
-        pruning_table_1,
-        pruning_table_2,
-        Some(25),
+        &move_table_1,
+        &move_table_2,
+        &pruning_table_1,
+        &pruning_table_2,
+        Some(22),
     );
     println!("Solved in {:?}", now.elapsed());
     println!("[{}]", FaceTurn::format_seq(solution.into_iter()));

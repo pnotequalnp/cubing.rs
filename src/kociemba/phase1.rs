@@ -37,6 +37,7 @@ impl Cube {
 }
 
 impl Search for Cube {
+    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -45,10 +46,11 @@ impl Search for Cube {
         table.lookup(self)
     }
 
-    fn transition(self, table: &Self::TransitionData) -> Vec<(Self, Self::Edge)> {
+    fn transition(self, table: &Self::TransitionData) -> Self::Iter {
         (0..MOVE_COUNT)
             .map(|ix| (table.lookup(self, ix), ix))
-            .collect()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 
