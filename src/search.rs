@@ -84,7 +84,7 @@ pub fn ida_iter<'a, T: 'a + Search>(
     (0..=max).flat_map(move |depth| dfs_iter(start, goal, heuristic_data, transition_data, depth))
 }
 
-fn dfs_iter<'a, T: Search>(
+pub fn dfs_iter<'a, T: Search>(
     start: T,
     goal: T,
     heuristic_data: &'a T::HeuristicData,
@@ -100,6 +100,7 @@ fn dfs_iter<'a, T: Search>(
         current_depth: 0,
         target_depth: depth,
         path: Vec::new(),
+        nodes: 0,
     }
 }
 
@@ -111,12 +112,18 @@ pub struct DFSIterator<'a, T: Search> {
     current_depth: Depth,
     target_depth: Depth,
     path: Vec<(T, T::Edge, T::Iter)>,
+    nodes: usize,
 }
 
 impl<T: Search> DFSIterator<'_, T> {
+    pub fn nodes(&self) -> usize {
+        self.nodes
+    }
+
     fn scan(&mut self) -> Option<<Self as Iterator>::Item> {
         let goal = self.goal;
-        if let Some((vertex, edge)) = self.future.find(|(v, _)| *v == goal) {
+        let nodes = &mut self.nodes;
+        if let Some((vertex, edge)) = self.future.find(|(v, _)| { *nodes += 1; *v == goal}) {
             let mut path = self
                 .path
                 .iter()
