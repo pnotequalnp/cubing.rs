@@ -54,6 +54,9 @@ where
 
     pub fn lookup(&self, position: S) -> Depth {
         let Table(table, _) = self;
-        table[position.into()]
+        #[cfg(debug_assertions)]
+        { table[position.into()] }
+        #[cfg(not(debug_assertions))]
+        unsafe { *table.get_unchecked(position.into()) }
     }
 }
