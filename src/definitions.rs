@@ -1,8 +1,5 @@
-use crate::pruning;
-use crate::transition as trans;
 use crate::util::{binomial, factorial, power};
-use alloc::vec::Vec;
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 use core::iter::Product;
 
 type Element = u8;
@@ -385,59 +382,3 @@ impl<const N: usize, const K: usize> TryFrom<usize> for CombinationCoord<N, K> {
         }
     }
 }
-
-pub struct OrientationPruning<const N: usize, const M: Orientation, const S: usize>(
-    pruning::PruningTable<OrientationCoord<N, M>, usize, { power(M, N - 1) }>,
-)
-where
-    [OrientationCoord<N, M>; power(M, N - 1)]: Sized;
-
-impl<const N: usize, const M: Orientation, const S: usize> OrientationPruning<N, M, S>
-where
-    [OrientationCoord<N, M>; power(M, N - 1)]: Sized,
-    [OrientationCoord<N, M>; OrientationCoord::<N, M>::BOUND * S]: Sized,
-{
-    pub fn new(
-        table: &trans::Table<OrientationCoord<N, M>, { OrientationCoord::<N, M>::BOUND }, S>,
-    ) -> Self {
-        let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
-        Self(pruning::PruningTable::new(
-            OrientationCoord::default(),
-            gens,
-            |coord, gen| table.lookup(*coord, *gen),
-        ))
-    }
-
-    pub fn lookup(&self, coord: OrientationCoord<N, M>) -> pruning::Depth {
-        let Self(table) = self;
-        table.lookup(coord)
-    }
-}
-
-// pub struct FullPruning<const N: usize, const M: Orientation, const S: usize>(
-//     pruning::PruningTable<Coordinate<N, M>, usize, { power(M, N - 1) * factorial(N) }>,
-// )
-// where
-//     [OrientationCoord<N, M>; power(M, N - 1) * factorial(N)]: Sized;
-
-// impl<const N: usize, const M: Orientation, const S: usize> FullPruning<N, M, S>
-// where
-//     [Coordinate<N, M>; power(M, N - 1) * factorial(N)]: Sized,
-//     [OrientationCoord<N, M>; power(M, N - 1) * S]: Sized,
-//     [PermutationCoord<N>; factorial(N) * S]: Sized,
-// {
-//     pub fn new(table: &FullTable<N, M, S>) -> Self {
-//         let gens: [usize; S] = (0..S).collect::<Vec<usize>>().try_into().unwrap();
-//         Self(pruning::PruningTable::new(
-//             Coordinate::default(),
-//             gens,
-//             |coord, gen| table.lookup(*coord, *gen),
-//         ))
-//     }
-
-//     pub fn lookup(&self, position: Coordinate<N, M>) -> pruning::Depth {
-//         let Self(table) = self;
-
-//         table.lookup(position)
-//     }
-// }

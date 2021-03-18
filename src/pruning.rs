@@ -4,26 +4,24 @@ use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::marker::PhantomData;
 
-pub struct PruningTable<S: Into<usize> + TryFrom<usize>, T, const N: usize>(
+pub struct Table<S: Copy + Default + Into<usize> + TryFrom<usize>, const N: usize>(
     Box<[Depth; N]>,
     PhantomData<S>,
-    PhantomData<T>,
 )
 where
     [Depth; N]: Sized;
 
-impl<S: Into<usize> + TryFrom<usize>, T, const N: usize> PruningTable<S, T, N>
+impl<S: Copy + Default + Into<usize> + TryFrom<usize>, const N: usize> Table<S, N>
 where
     [Depth; N]: Sized,
 {
-    pub fn new<const M: usize>(
-        goal: S,
-        generators: [T; M],
-        transition: impl Fn(&S, &T) -> S,
+    pub fn new<T, const M: usize>(
+        generators: &[T; M],
+        transition: impl Fn(S, &T) -> S,
     ) -> Self {
         let mut table: Box<[u8; N]> = vec![Depth::MAX; N].into_boxed_slice().try_into().unwrap();
 
-        table[goal.into()] = 0;
+        table[S::default().into()] = 0;
 
         (0..).find(|depth| {
             let positions: Vec<S> = table
@@ -35,7 +33,7 @@ where
 
             for position in &positions {
                 for generator in generators.iter() {
-                    let ix = transition(position, generator).into();
+                    let ix = transition(*position, generator).into();
                     if table[ix] > *depth + 1 {
                         table[ix] = depth + 1;
                     };
@@ -45,11 +43,17 @@ where
             positions.is_empty()
         });
 
-        PruningTable(table, PhantomData, PhantomData)
+        for ix in 0..table.len() {
+            if table[ix] == Depth::MAX {
+                table[ix] = 0;
+            }
+        }
+
+        Table(table, PhantomData)
     }
 
     pub fn lookup(&self, position: S) -> Depth {
-        let PruningTable(table, _, _) = self;
+        let Table(table, _) = self;
         table[position.into()]
     }
 }

@@ -1,9 +1,10 @@
 use crate::turns::FaceTurn;
 use cube::definitions as def;
-// use cube::search::Depth;
+use cube::pruning;
+use cube::search::Depth;
 use cube::search::Search;
 use cube::transition as trans;
-// use std::cmp::max;
+use std::cmp::max;
 use std::iter::FromIterator;
 
 type Corners = def::OrientationCoord<C_COUNT, C_ORI>;
@@ -16,6 +17,17 @@ const E_COUNT: usize = 12;
 const E_ORI: u8 = 2;
 const S_COUNT: usize = 4;
 const MOVE_COUNT: usize = 18;
+const GENERATORS: [usize; MOVE_COUNT] = {
+    let mut gens = [0; MOVE_COUNT];
+
+    let mut ix = 0;
+    while ix < MOVE_COUNT {
+        gens[ix] = ix;
+        ix += 1;
+    }
+
+    gens
+};
 pub const C_MOVES: [def::Array<C_COUNT, C_ORI>; MOVE_COUNT] = [
     def::Array::new([
         (3, 0),
@@ -477,19 +489,18 @@ impl Cube {
         Table::new()
     }
 
-    // pub fn create_pruning_table(move_table: &Table) -> PruningTable {
-    //     PruningTable::new(move_table)
-    // }
+    pub fn create_pruning_table(move_table: &Table) -> PruningTable {
+        PruningTable::new(move_table)
+    }
 }
 
 impl Search for Cube {
     type Edge = usize;
-    type HeuristicData = ();
+    type HeuristicData = PruningTable;
     type TransitionData = Table;
 
-    fn heuristic(self, _table: &Self::HeuristicData) -> cube::search::Depth {
-        // table.lookup(self)
-        0
+    fn heuristic(self, table: &Self::HeuristicData) -> cube::search::Depth {
+        table.lookup(self)
     }
 
     fn transition(self, table: &Self::TransitionData) -> Vec<(Self, Self::Edge)> {
@@ -591,35 +602,38 @@ impl Table {
     }
 }
 
-// pub struct PruningTable(
-//     def::OrientationPruning<C_COUNT, C_ORI, MOVE_COUNT>,
-//     def::OrientationPruning<E_COUNT, E_ORI, MOVE_COUNT>,
-// );
+pub struct PruningTable(
+    pruning::Table<Corners, { Corners::BOUND }>,
+    pruning::Table<Edges, { Edges::BOUND }>,
+    pruning::Table<Slice, { Slice::BOUND }>,
+);
 
-// impl PruningTable {
-//     pub fn new(Table(c_table, e_table, _s_table): &Table) -> Self {
-//         Self(
-//             def::OrientationPruning::new(c_table),
-//             def::OrientationPruning::new(e_table),
-//         )
-//     }
+impl PruningTable {
+    pub fn new(Table(c_table, e_table, s_table): &Table) -> Self {
+        Self(
+            pruning::Table::new(&GENERATORS, |coord, gen| c_table.lookup(coord, *gen)),
+            pruning::Table::new(&GENERATORS, |coord, gen| e_table.lookup(coord, *gen)),
+            pruning::Table::new(&GENERATORS, |coord, gen| s_table.lookup(coord, *gen)),
+        )
+    }
 
-//     pub fn lookup(
-//         &self,
-//         Cube {
-//             corners,
-//             edges,
-//             slice: _,
-//         }: Cube,
-//     ) -> Depth {
-//         let PruningTable(c_table, e_table) = self;
+    pub fn lookup(
+        &self,
+        Cube {
+            corners,
+            edges,
+            slice,
+        }: Cube,
+    ) -> Depth {
+        let PruningTable(c_table, e_table, s_table) = self;
 
-//         let corners = c_table.lookup(corners);
-//         let edges = e_table.lookup(edges);
+        let corners = c_table.lookup(corners);
+        let edges = e_table.lookup(edges);
+        let slice = s_table.lookup(slice);
 
-//         max(corners, edges)
-//     }
-// }
+        max(max(corners, edges), slice)
+    }
+}
 
 #[cfg(test)]
 mod tests {
