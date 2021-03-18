@@ -1,12 +1,12 @@
 mod moves;
 
 use crate::rubiks::FaceTurn;
-use cube::definitions as def;
-use cube::pruning;
-use cube::search::Depth;
-use cube::search::Search;
-use cube::transition as trans;
-use cube::util::count;
+use rubiks_rs::definitions as def;
+use rubiks_rs::pruning;
+use rubiks_rs::search::Depth;
+use rubiks_rs::search::Search;
+use rubiks_rs::transition as trans;
+use rubiks_rs::util::count;
 use moves::*;
 use std::cmp::max;
 use std::convert::TryFrom;
@@ -45,6 +45,22 @@ impl Cube {
     pub fn create_pruning_table(move_table: &Table) -> PruningTable {
         PruningTable::new(move_table)
     }
+
+    pub fn face_turn(value: usize) -> FaceTurn {
+        match value {
+            0 => FaceTurn::U,
+            1 => FaceTurn::U2,
+            2 => FaceTurn::U3,
+            3 => FaceTurn::D,
+            4 => FaceTurn::D2,
+            5 => FaceTurn::D3,
+            6 => FaceTurn::R2,
+            7 => FaceTurn::F2,
+            8 => FaceTurn::L2,
+            9 => FaceTurn::B2,
+            _ => panic!("Not a phase 2 generator"),
+        }
+    }
 }
 
 impl Search for Cube {
@@ -52,7 +68,7 @@ impl Search for Cube {
     type HeuristicData = PruningTable;
     type TransitionData = Table;
 
-    fn heuristic(self, table: &Self::HeuristicData) -> cube::search::Depth {
+    fn heuristic(self, table: &Self::HeuristicData) -> Depth {
         table.lookup(self)
     }
 

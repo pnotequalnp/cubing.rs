@@ -1,7 +1,10 @@
+pub mod cube;
 mod moves;
 
-pub use moves::CORNER_MOVES;
-pub use moves::EDGE_MOVES;
+use rubiks_rs::util::count;
+
+pub use moves::*;
+pub use cube::Cube;
 
 pub const CORNERS: usize = 8;
 pub const TWISTS: u8 = 3;
@@ -9,17 +12,7 @@ pub const EDGES: usize = 12;
 pub const FLIPS: u8 = 2;
 pub const BELT_EDGES: usize = 4;
 pub const MOVE_COUNT: usize = 18;
-pub const GENERATORS: [usize; MOVE_COUNT] = {
-    let mut gens = [0; MOVE_COUNT];
-
-    let mut ix = 0;
-    while ix < MOVE_COUNT {
-        gens[ix] = ix;
-        ix += 1;
-    }
-
-    gens
-};
+pub const GENERATORS: [usize; MOVE_COUNT] = count::<MOVE_COUNT>();
 
 #[rustfmt::skip]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

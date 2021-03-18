@@ -49,6 +49,7 @@ fn kociemba() {
         move_table_2,
         pruning_table_1,
         pruning_table_2,
+        Some(25),
     );
     println!("Solved in {:?}", now.elapsed());
     println!("[{}]", FaceTurn::format_seq(solution.into_iter()));

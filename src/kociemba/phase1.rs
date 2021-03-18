@@ -1,9 +1,9 @@
 use crate::rubiks::*;
-use cube::definitions as def;
-use cube::pruning;
-use cube::search::Depth;
-use cube::search::Search;
-use cube::transition as trans;
+use rubiks_rs::definitions as def;
+use rubiks_rs::pruning;
+use rubiks_rs::search::Depth;
+use rubiks_rs::search::Search;
+use rubiks_rs::transition as trans;
 use std::cmp::max;
 use std::iter::FromIterator;
 
@@ -41,7 +41,7 @@ impl Search for Cube {
     type HeuristicData = PruningTable;
     type TransitionData = Table;
 
-    fn heuristic(self, table: &Self::HeuristicData) -> cube::search::Depth {
+    fn heuristic(self, table: &Self::HeuristicData) -> Depth {
         table.lookup(self)
     }
 

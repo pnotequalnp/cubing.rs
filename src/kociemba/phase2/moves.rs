@@ -1,5 +1,5 @@
 use super::*;
-use cube::definitions as def;
+use rubiks_rs::definitions as def;
 
 #[rustfmt::skip]
 pub const CORNER_MOVES: [def::Array<CORNERS, 1>; MOVE_COUNT] = [

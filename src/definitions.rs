@@ -1,5 +1,5 @@
 use crate::util::{binomial, factorial, power};
-use core::convert::TryFrom;
+use core::convert::{TryFrom, TryInto};
 use core::iter::Product;
 
 type Element = u8;
@@ -157,8 +157,20 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         CombinationCoord(t)
     }
 
-    pub const fn coordinate(&self) -> Coordinate<N, M> {
-        Coordinate(self.o_coordinate(), self.p_coordinate())
+    pub fn truncate<const K: usize>(&self) -> Result<Array::<K, M>, CreationError> {
+        debug_assert!(K < N, "Cannot truncate to longer array");
+
+        let Self(long_array) = self;
+        let short_array: [(Element, Orientation); K] = long_array[0..K].try_into().unwrap();
+        Array::<K, M>::create(short_array)
+    }
+
+    pub fn drop<const K: usize>(&self) -> Result<Array::<K, M>, CreationError> {
+        debug_assert!(K < N, "Cannot drop more than array");
+
+        let Self(long_array) = self;
+        let short_array: [(Element, Orientation); K] = long_array[N - K..].try_into().unwrap();
+        Array::<K, M>::create(short_array)
     }
 }
 

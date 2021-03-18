@@ -60,13 +60,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cube"
-version = "0.1.0"
-dependencies = [
- "rayon",
-]
-
-[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -135,6 +128,13 @@ dependencies = [
  "crossbeam-utils",
  "lazy_static",
  "num_cpus",
+]
+
+[[package]]
+name = "rubiks-rs"
+version = "0.1.0"
+dependencies = [
+ "rayon",
 ]
 
 [[package]]
