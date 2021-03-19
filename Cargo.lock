@@ -179,6 +179,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cubing"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "once_cell",
+]
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -393,14 +401,6 @@ name = "regex-syntax"
 version = "0.6.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24d5f089152e60f62d28b835fbff2cd2e8dc0baf1ac13343bef92ab7eed84548"
-
-[[package]]
-name = "rubiks-rs"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "once_cell",
-]
 
 [[package]]
 name = "rustc_version"

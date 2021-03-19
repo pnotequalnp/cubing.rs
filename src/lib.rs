@@ -15,4 +15,4 @@ pub mod kociemba;
 pub mod rubiks;
 pub mod util;
 
-pub use crate::core::*;
+pub use crate::core::search;

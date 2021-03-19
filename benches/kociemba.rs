@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use once_cell::sync::Lazy;
-use rubiks_rs::kociemba::*;
-use rubiks_rs::search;
+use cubing::kociemba::*;
+use cubing::search;
 
 static MOVE_TABLE_1: Lazy<phase1::Table> = Lazy::new(|| phase1::Table::new());
 static MOVE_TABLE_2: Lazy<phase2::Table> = Lazy::new(|| phase2::Table::new());
@@ -35,7 +35,7 @@ pub fn phase_2_pruning_table(c: &mut Criterion) {
 }
 
 pub fn super_flip_phase_1(c: &mut Criterion) {
-    let super_flip = rubiks_rs::rubiks::positions::SUPER_FLIP
+    let super_flip = cubing::rubiks::positions::SUPER_FLIP
         .iter()
         .cloned()
         .collect::<Phase1>();
@@ -46,7 +46,7 @@ pub fn super_flip_phase_1(c: &mut Criterion) {
 }
 
 pub fn super_flip_phase_2(c: &mut Criterion) {
-    let super_flip = rubiks_rs::rubiks::positions::SUPER_FLIP
+    let super_flip = cubing::rubiks::positions::SUPER_FLIP
         .iter()
         .cloned()
         .collect::<Phase2>();
@@ -58,7 +58,7 @@ pub fn super_flip_phase_2(c: &mut Criterion) {
 
 pub fn super_flip_full(c: &mut Criterion) {
     let mut group = c.benchmark_group("Kociemba: super flip");
-    let super_flip = rubiks_rs::rubiks::positions::SUPER_FLIP
+    let super_flip = cubing::rubiks::positions::SUPER_FLIP
         .iter()
         .cloned()
         .collect::<Vec<_>>();

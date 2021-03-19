@@ -1,7 +1,7 @@
 #![feature(array_map)]
 
-use rubiks_rs::kociemba;
-use rubiks_rs::rubiks::FaceTurn::{self, *};
+use cubing::kociemba;
+use cubing::rubiks::FaceTurn::{self, *};
 use std::time::Instant;
 
 fn main() {
@@ -36,7 +36,7 @@ fn kociemba() {
 
     use kociemba::Phase1;
     let position = scramble.iter().cloned().collect::<Phase1>();
-    let mut solver = rubiks_rs::search::dfs_iter(
+    let mut solver = cubing::search::dfs_iter(
         position,
         Phase1::default(),
         &pruning_table_1,
