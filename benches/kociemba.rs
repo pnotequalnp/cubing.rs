@@ -35,33 +35,16 @@ pub fn phase_2_pruning_table(c: &mut Criterion) {
 }
 
 pub fn super_flip_phase_1(c: &mut Criterion) {
-    let super_flip = cubing::rubiks::positions::SUPER_FLIP
-        .iter()
-        .cloned()
-        .collect::<Phase1>();
+    let super_flip = Phase1::from(&cubing::rubiks::positions::SUPER_FLIP);
 
     c.bench_function("Kociemba: super flip phase 1", |b| {
         b.iter(|| search::ida_iter(super_flip, &PRUNING_TABLE_1, &MOVE_TABLE_1, None))
     });
 }
 
-pub fn super_flip_phase_2(c: &mut Criterion) {
-    let super_flip = cubing::rubiks::positions::SUPER_FLIP
-        .iter()
-        .cloned()
-        .collect::<Phase2>();
-
-    c.bench_function("Kociemba: super flip phase 2", |b| {
-        b.iter(|| search::ida_iter(super_flip, &PRUNING_TABLE_2, &MOVE_TABLE_2, None))
-    });
-}
-
 pub fn super_flip_full(c: &mut Criterion) {
     let mut group = c.benchmark_group("Kociemba: super flip");
-    let super_flip = cubing::rubiks::positions::SUPER_FLIP
-        .iter()
-        .cloned()
-        .collect::<Vec<_>>();
+    let super_flip = cubing::rubiks::positions::SUPER_FLIP;
 
     for max_length in [None, Some(23), Some(22)].iter() {
         group.bench_with_input(
@@ -72,7 +55,7 @@ pub fn super_flip_full(c: &mut Criterion) {
             |b, &max_length| {
                 b.iter(|| {
                     solve(
-                        super_flip.clone(),
+                        &super_flip,
                         &MOVE_TABLE_1,
                         &MOVE_TABLE_2,
                         &PRUNING_TABLE_1,

@@ -60,7 +60,7 @@ fn kociemba() {
     );
     let now = Instant::now();
     let solution = kociemba::solve(
-        scramble,
+        &scramble.into_iter().collect(),
         &move_table_1,
         &move_table_2,
         &pruning_table_1,

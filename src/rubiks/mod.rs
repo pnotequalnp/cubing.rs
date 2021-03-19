@@ -50,6 +50,10 @@ impl core::fmt::Display for FaceTurn {
 }
 
 impl FaceTurn {
+    pub const fn to_usize(self) -> usize {
+        self as usize
+    }
+
     pub fn format_seq(iter: impl Iterator<Item = Self>) -> String {
         iter.map(|turn| format!("{}", turn))
             .intersperse(" ".to_string())

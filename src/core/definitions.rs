@@ -18,7 +18,7 @@ pub enum CreationError {
 pub struct Array<const N: usize, const M: Orientation>([(Element, Orientation); N]);
 
 impl<const N: usize, const M: Orientation> Array<N, M> {
-    const IDENTITY: Self = {
+    pub const IDENTITY: Self = {
         let mut pm = [(0, 0); N];
 
         let mut ix = 1u8;

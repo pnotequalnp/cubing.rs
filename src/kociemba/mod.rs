@@ -10,29 +10,28 @@ pub use phase1::Cube as Phase1;
 pub use phase2::Cube as Phase2;
 
 pub fn solve(
-    scramble: impl IntoIterator<Item = FaceTurn>,
+    position: &Cube3x3,
     move_table_1: &phase1::Table,
     move_table_2: &phase2::Table,
     pruning_table_1: &phase1::PruningTable,
     pruning_table_2: &phase2::PruningTable,
     max_length: Option<Depth>,
 ) -> Vec<FaceTurn> {
-    let initial_full_position = scramble.into_iter().collect::<Cube3x3>();
+    let initial_phase_1 = Phase1::from(position);
 
-    let initial_position = Phase1::from(&initial_full_position);
     let res =
-        ida_iter(initial_position, &pruning_table_1, &move_table_1, None).find_map(|path_1| {
+        ida_iter(initial_phase_1, &pruning_table_1, &move_table_1, None).find_map(|path_1| {
             let sol_1 = path_1.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
 
-            let intermediate_full_position =
-                initial_full_position.apply_seq(sol_1.iter().cloned().map(FaceTurn::from));
+            let intermediate_position =
+                position.apply_seq(sol_1.iter().cloned().map(FaceTurn::from));
 
-            let intermediate_position = Phase2::try_from(&intermediate_full_position).unwrap();
+            let initial_phase_2 = Phase2::try_from(&intermediate_position).unwrap();
 
             let max = max_length.map(|l| l - sol_1.len() as Depth);
 
             let path_2 =
-                ida_iter(intermediate_position, &pruning_table_2, &move_table_2, max).next()?;
+                ida_iter(initial_phase_2, &pruning_table_2, &move_table_2, max).next()?;
             let sol_2 = path_2.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
 
             let solution = sol_1

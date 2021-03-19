@@ -12,13 +12,13 @@ pub struct Cube3x3 {
 }
 
 impl Cube3x3 {
-    pub fn new(corners: Corners, edges: Edges) -> Self {
+    pub const fn new(corners: Corners, edges: Edges) -> Self {
         Self { corners, edges }
     }
 
-    pub fn apply(&self, turn: FaceTurn) -> Self {
+    pub const fn apply(&self, turn: FaceTurn) -> Self {
         let Self { corners, edges } = self;
-        let ix = usize::from(turn);
+        let ix = turn.to_usize();
 
         let corners = corners.permute(&CORNER_MOVES[ix]);
         let edges = edges.permute(&EDGE_MOVES[ix]);
@@ -26,10 +26,28 @@ impl Cube3x3 {
         Self { corners, edges }
     }
 
+    pub const fn apply_slice(self, slice: &[FaceTurn]) -> Self {
+        let mut state = self;
+
+        let mut ix = 0;
+        while ix < slice.len() {
+            state = state.apply(slice[ix]);
+            ix += 1;
+        }
+
+        state
+
+    }
+
     pub fn apply_seq(&self, sequence: impl IntoIterator<Item = FaceTurn>) -> Self {
         sequence
             .into_iter()
             .fold(self.clone(), |cube, turn| cube.apply(turn))
+    }
+
+    pub const fn from_slice(slice: &[FaceTurn]) -> Self {
+        let start = Self::new(Corners::IDENTITY, Edges::IDENTITY);
+        start.apply_slice(slice)
     }
 }
 
