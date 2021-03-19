@@ -4,7 +4,7 @@ use crate::core::definitions as def;
 use crate::core::pruning;
 use crate::core::search::{Depth, Search};
 use crate::core::transition as trans;
-use crate::rubiks::FaceTurn;
+use crate::rubiks::{Cube3x3, FaceTurn};
 use crate::util::count;
 use alloc::vec::Vec;
 use core::cmp::max;
@@ -78,6 +78,18 @@ impl Search for Cube {
             .map(|ix| (table.lookup(self, ix), ix))
             .collect::<Vec<_>>()
             .into_iter()
+    }
+}
+
+impl TryFrom<&Cube3x3> for Cube {
+    type Error = def::CreationError;
+
+    fn try_from(cube: &Cube3x3) -> Result<Self, Self::Error> {
+        let corners = cube.corners.truncate::<8>()?;
+        let edges = cube.edges.truncate::<8>()?;
+        let slice = cube.edges.drop::<4>()?;
+
+        Ok(Self::new(corners.p_coordinate(), edges.p_coordinate(), slice.p_coordinate()))
     }
 }
 

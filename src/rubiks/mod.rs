@@ -1,11 +1,11 @@
-pub mod cube;
+pub mod cube3x3;
 pub mod moves;
 pub mod positions;
 
 use crate::util::count;
 use alloc::string::{String, ToString};
 
-pub use cube::Cube;
+pub use cube3x3::Cube3x3;
 pub use moves::*;
 
 pub const CORNERS: usize = 8;

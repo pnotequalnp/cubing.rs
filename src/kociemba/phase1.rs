@@ -54,8 +54,18 @@ impl Search for Cube {
     }
 }
 
-impl From<FaceTurn> for Cube {
-    fn from(turn: FaceTurn) -> Self {
+impl From<&Cube3x3> for Cube {
+    fn from(cube: &Cube3x3) -> Self {
+        let corners = cube.corners.o_coordinate();
+        let edges = cube.edges.o_coordinate();
+        let slice = cube.edges.c_coordinate();
+
+        Self::new(corners, edges, slice)
+    }
+}
+
+impl From<&FaceTurn> for Cube {
+    fn from(turn: &FaceTurn) -> Self {
         let ix = match turn {
             FaceTurn::U => 0,
             FaceTurn::U2 => 1,
@@ -94,6 +104,25 @@ impl FromIterator<FaceTurn> for Cube {
         let (corners, edges) = iter
             .into_iter()
             .map(usize::from)
+            .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix]))
+            .fold(
+                (def::Array::default(), def::Array::default()),
+                |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
+            );
+
+        Self::new(
+            corners.o_coordinate(),
+            edges.o_coordinate(),
+            edges.c_coordinate(),
+        )
+    }
+}
+
+impl<'a> FromIterator<&'a FaceTurn> for Cube {
+    fn from_iter<T: IntoIterator<Item = &'a FaceTurn>>(iter: T) -> Self {
+        let (corners, edges) = iter
+            .into_iter()
+            .map(|x| usize::from(*x))
             .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix]))
             .fold(
                 (def::Array::default(), def::Array::default()),
