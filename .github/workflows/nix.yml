@@ -24,8 +24,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build
       run: |
-        nix develop -c cargo build --verbose
-        nix develop -c cargo build --verbose --release
+        nix develop -c cargo build --verbose --all-targets
+        nix develop -c cargo build --verbose --all-targets --release
     - name: Run tests
       run: |
         nix develop -c cargo test --verbose
