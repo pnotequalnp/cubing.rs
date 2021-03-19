@@ -36,7 +36,6 @@ impl Cube3x3 {
         }
 
         state
-
     }
 
     pub fn apply_seq(&self, sequence: impl IntoIterator<Item = FaceTurn>) -> Self {

@@ -89,7 +89,11 @@ impl TryFrom<&Cube3x3> for Cube {
         let edges = cube.edges.truncate::<8>()?;
         let slice = cube.edges.drop::<4>()?;
 
-        Ok(Self::new(corners.p_coordinate(), edges.p_coordinate(), slice.p_coordinate()))
+        Ok(Self::new(
+            corners.p_coordinate(),
+            edges.p_coordinate(),
+            slice.p_coordinate(),
+        ))
     }
 }
 

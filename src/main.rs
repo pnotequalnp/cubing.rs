@@ -1,6 +1,4 @@
-#![feature(array_map)]
-
-use cubing::kociemba;
+use cubing::algorithms::kociemba;
 use cubing::rubiks::FaceTurn::{self, *};
 use std::time::Instant;
 

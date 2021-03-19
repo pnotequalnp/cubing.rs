@@ -10,8 +10,8 @@
 #[macro_use]
 extern crate alloc;
 
+pub mod algorithms;
 pub mod core;
-pub mod kociemba;
 pub mod rubiks;
 pub mod util;
 
