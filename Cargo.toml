@@ -26,3 +26,7 @@ harness = false
 [[bench]]
 name = "kociemba"
 harness = false
+
+[[bench]]
+name = "transitions"
+harness = false

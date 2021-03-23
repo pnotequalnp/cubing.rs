@@ -24,7 +24,14 @@
         };
       in {
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ nodejs rust-src wasm-pack cargo-asm ];
+          nativeBuildInputs = with pkgs; [
+            cargo-asm
+            cargo-flamegraph
+            gnuplot
+            nodejs
+            rust-src
+            wasm-pack
+          ];
         };
       });
 }

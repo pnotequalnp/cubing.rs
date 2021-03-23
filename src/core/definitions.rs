@@ -91,6 +91,20 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         Array(base)
     }
 
+    pub fn permute_inplace(&mut self, Self(that): &mut Self) {
+        let Self(this) = self;
+
+        for ix in 0..N - 1 {
+            let mut next = ix;
+            while that[next].0 as usize != N {
+                this.swap(ix, that[next].0 as usize);
+                let t = that[next].0;
+                that[next].0 = N as u8;
+                next = t as usize;
+            }
+        }
+    }
+
     pub const fn p_coordinate(&self) -> PermutationCoord<N> {
         debug_assert!(N < 13, "Coordinate space exceeds u32");
 
