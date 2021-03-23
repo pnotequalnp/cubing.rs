@@ -16,7 +16,7 @@ fn kociemba() {
     let position = positions::SUPER_FLIP;
 
     use kociemba::Phase1;
-    let mut solver = cubing::search::dfs_iter(
+    let mut solver = cubing::core::search::dfs_iter(
         Phase1::from(&position),
         Phase1::default(),
         &tables.1,

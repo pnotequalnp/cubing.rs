@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use cubing::algorithms::kociemba;
-use cubing::search;
+use cubing::core::search;
 use once_cell::sync::Lazy;
 
 static TABLES: Lazy<kociemba::Tables> = Lazy::new(|| kociemba::generate_tables());

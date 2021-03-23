@@ -1,4 +1,4 @@
-pub use crate::search::Depth;
+pub use crate::core::search::Depth;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};

@@ -14,5 +14,3 @@ pub mod core;
 pub mod notation;
 pub mod rubiks;
 pub mod util;
-
-pub use crate::core::search;
