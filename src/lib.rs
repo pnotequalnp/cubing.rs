@@ -1,4 +1,3 @@
-#![no_std]
 #![allow(incomplete_features)]
 #![feature(array_map)]
 #![feature(array_zip)]
@@ -12,6 +11,7 @@ extern crate alloc;
 
 pub mod algorithms;
 pub mod core;
+pub mod notation;
 pub mod rubiks;
 pub mod util;
 

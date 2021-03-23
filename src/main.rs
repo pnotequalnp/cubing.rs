@@ -1,13 +1,13 @@
-use cubing::algorithms::kociemba;
-use cubing::rubiks::positions;
-use cubing::rubiks::FaceTurn;
-use std::time::Instant;
-
 fn main() {
     kociemba();
 }
 
 fn kociemba() {
+    use cubing::algorithms::kociemba;
+    use cubing::notation::HTM;
+    use cubing::rubiks::positions;
+    use std::time::Instant;
+
     println!("Generating Kociemba tables...");
     let now = Instant::now();
     let tables = kociemba::generate_tables();
@@ -38,5 +38,5 @@ fn kociemba() {
     let now = Instant::now();
     let solution = position.kociemba(&tables, Some(22));
     println!("Solved in {:?}", now.elapsed());
-    println!("[{}]", FaceTurn::format_seq(solution.into_iter()));
+    println!("[{}]", HTM::format_seq(solution.into_iter()));
 }

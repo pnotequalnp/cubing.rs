@@ -4,7 +4,8 @@ use crate::core::definitions as def;
 use crate::core::pruning;
 use crate::core::search::{Depth, Search};
 use crate::core::transition as trans;
-use crate::rubiks::{Cube3x3, FaceTurn};
+use crate::notation::HTM;
+use crate::rubiks::Cube3x3;
 use crate::util::count;
 use alloc::vec::Vec;
 use core::cmp::max;
@@ -46,18 +47,20 @@ impl Cube {
         PruningTable::new(move_table)
     }
 
-    pub fn face_turn(value: usize) -> FaceTurn {
+    pub fn gen_to_htm(value: usize) -> HTM {
+        use HTM::*;
+
         match value {
-            0 => FaceTurn::U,
-            1 => FaceTurn::U2,
-            2 => FaceTurn::U3,
-            3 => FaceTurn::D,
-            4 => FaceTurn::D2,
-            5 => FaceTurn::D3,
-            6 => FaceTurn::R2,
-            7 => FaceTurn::F2,
-            8 => FaceTurn::L2,
-            9 => FaceTurn::B2,
+            0 => U1,
+            1 => U2,
+            2 => U3,
+            3 => D1,
+            4 => D2,
+            5 => D3,
+            6 => R2,
+            7 => F2,
+            8 => L2,
+            9 => B2,
             _ => panic!("Not a phase 2 generator"),
         }
     }
@@ -97,21 +100,23 @@ impl TryFrom<&Cube3x3> for Cube {
     }
 }
 
-impl TryFrom<FaceTurn> for Cube {
+impl TryFrom<HTM> for Cube {
     type Error = ();
 
-    fn try_from(turn: FaceTurn) -> Result<Self, Self::Error> {
+    fn try_from(turn: HTM) -> Result<Self, Self::Error> {
+        use HTM::*;
+
         let ix = match turn {
-            FaceTurn::U => Ok(0),
-            FaceTurn::U2 => Ok(1),
-            FaceTurn::U3 => Ok(2),
-            FaceTurn::D => Ok(3),
-            FaceTurn::D2 => Ok(4),
-            FaceTurn::D3 => Ok(5),
-            FaceTurn::R2 => Ok(6),
-            FaceTurn::F2 => Ok(7),
-            FaceTurn::L2 => Ok(8),
-            FaceTurn::B2 => Ok(9),
+            U1 => Ok(0),
+            U2 => Ok(1),
+            U3 => Ok(2),
+            D1 => Ok(3),
+            D2 => Ok(4),
+            D3 => Ok(5),
+            R2 => Ok(6),
+            F2 => Ok(7),
+            L2 => Ok(8),
+            B2 => Ok(9),
             _ => Err(()),
         }?;
 
@@ -127,8 +132,9 @@ impl TryFrom<FaceTurn> for Cube {
     }
 }
 
-impl FromIterator<FaceTurn> for Cube {
-    fn from_iter<T: IntoIterator<Item = FaceTurn>>(iter: T) -> Self {
+// TODO: this is dumb, is it used?
+impl FromIterator<HTM> for Cube {
+    fn from_iter<T: IntoIterator<Item = HTM>>(iter: T) -> Self {
         let (corners, edges, slice) = iter
             .into_iter()
             .map(usize::try_from)

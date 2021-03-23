@@ -2,7 +2,8 @@ pub mod phase1;
 pub mod phase2;
 
 use crate::core::search::{ida_iter, Depth};
-use crate::rubiks::{Cube3x3, FaceTurn};
+use crate::notation::HTM;
+use crate::rubiks::Cube3x3;
 use alloc::vec::Vec;
 use core::convert::TryFrom;
 
@@ -21,15 +22,14 @@ impl Cube3x3 {
         &self,
         (move_table_1, pruning_table_1, move_table_2, pruning_table_2): &Tables,
         max_length: Option<Depth>,
-    ) -> Vec<FaceTurn> {
+    ) -> Vec<HTM> {
         let initial_phase_1 = Phase1::from(self);
 
         let res =
             ida_iter(initial_phase_1, pruning_table_1, move_table_1, None).find_map(|path_1| {
-                let sol_1 = path_1.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
+                let sol_1 = path_1.into_iter().map(|(_, e)| e).map(Phase1::gen_to_htm);
 
-                let intermediate_position =
-                    self.apply_seq(sol_1.iter().cloned().map(FaceTurn::from));
+                let intermediate_position = self.apply_seq(sol_1.clone());
 
                 let initial_phase_2 = Phase2::try_from(&intermediate_position).unwrap();
 
@@ -41,8 +41,8 @@ impl Cube3x3 {
 
                 let solution = sol_1
                     .into_iter()
-                    .map(FaceTurn::from)
-                    .chain(sol_2.into_iter().map(Phase2::face_turn))
+                    .map(HTM::from)
+                    .chain(sol_2.into_iter().map(Phase2::gen_to_htm))
                     .collect::<Vec<_>>();
 
                 Some(solution)
