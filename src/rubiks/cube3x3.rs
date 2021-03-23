@@ -49,6 +49,10 @@ impl Cube3x3 {
         let start = Self::new(Corners::IDENTITY, Edges::IDENTITY);
         start.apply_slice(slice)
     }
+
+    pub fn random_state() -> Self {
+        Self::new(def::Array::random(), def::Array::random())
+    }
 }
 
 impl From<HTM> for Cube3x3 {

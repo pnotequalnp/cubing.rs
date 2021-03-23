@@ -172,6 +172,27 @@ impl<const N: usize, const M: Orientation> Array<N, M> {
         let short_array: [(Element, Orientation); K] = long_array[N - K..].try_into().unwrap();
         Array::<K, M>::create(short_array)
     }
+
+    pub fn random() -> Self {
+        use rand::distributions::{Distribution, Uniform};
+        use rand::seq::SliceRandom;
+
+        let mut rng = rand::thread_rng();
+        let dist = Uniform::from(0..M);
+        let Self(mut array) = Self::IDENTITY;
+
+        let mut sum = 0;
+        for ix in 0..N - 1 {
+            let o = dist.sample(&mut rng);
+            array[ix].1 = o;
+            sum += o;
+        }
+        array[N - 1].1 = (M - sum % M) % M;
+
+        array[..].shuffle(&mut rng);
+
+        Self(array)
+    }
 }
 
 impl<const N: usize, const M: Orientation> Product for Array<N, M> {
