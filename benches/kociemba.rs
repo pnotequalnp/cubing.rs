@@ -3,12 +3,7 @@ use cubing::algorithms::kociemba;
 use cubing::search;
 use once_cell::sync::Lazy;
 
-static MOVE_TABLE_1: Lazy<kociemba::phase1::Table> = Lazy::new(|| kociemba::phase1::Table::new());
-static MOVE_TABLE_2: Lazy<kociemba::phase2::Table> = Lazy::new(|| kociemba::phase2::Table::new());
-static PRUNING_TABLE_1: Lazy<kociemba::phase1::PruningTable> =
-    Lazy::new(|| kociemba::phase1::PruningTable::new(&MOVE_TABLE_1));
-static PRUNING_TABLE_2: Lazy<kociemba::phase2::PruningTable> =
-    Lazy::new(|| kociemba::phase2::PruningTable::new(&MOVE_TABLE_2));
+static TABLES: Lazy<kociemba::Tables> = Lazy::new(|| kociemba::generate_tables());
 
 pub fn phase_1_move_table(c: &mut Criterion) {
     c.bench_function("Kociemba: phase 1 move table", |b| {
@@ -23,26 +18,30 @@ pub fn phase_2_move_table(c: &mut Criterion) {
 }
 
 pub fn phase_1_pruning_table(c: &mut Criterion) {
+    Lazy::force(&TABLES);
     c.bench_function("Kociemba: phase 1 pruning table", |b| {
-        b.iter(|| kociemba::phase1::PruningTable::new(&MOVE_TABLE_1))
+        b.iter(|| kociemba::phase1::PruningTable::new(&TABLES.0))
     });
 }
 
 pub fn phase_2_pruning_table(c: &mut Criterion) {
+    Lazy::force(&TABLES);
     c.bench_function("Kociemba: phase 2 pruning table", |b| {
-        b.iter(|| kociemba::phase2::PruningTable::new(&MOVE_TABLE_2))
+        b.iter(|| kociemba::phase2::PruningTable::new(&TABLES.2))
     });
 }
 
 pub fn super_flip_phase_1(c: &mut Criterion) {
+    Lazy::force(&TABLES);
     let super_flip = kociemba::Phase1::from(&cubing::rubiks::positions::SUPER_FLIP);
 
     c.bench_function("Kociemba: super flip phase 1", |b| {
-        b.iter(|| search::ida_iter(super_flip, &PRUNING_TABLE_1, &MOVE_TABLE_1, None))
+        b.iter(|| search::ida_iter(super_flip, &TABLES.1, &TABLES.0, None))
     });
 }
 
 pub fn super_flip_full(c: &mut Criterion) {
+    Lazy::force(&TABLES);
     let mut group = c.benchmark_group("Kociemba: super flip");
     let super_flip = cubing::rubiks::positions::SUPER_FLIP;
 
@@ -53,16 +52,7 @@ pub fn super_flip_full(c: &mut Criterion) {
                 .unwrap_or("None".to_string()),
             max_length,
             |b, &max_length| {
-                b.iter(|| {
-                    kociemba::solve(
-                        &super_flip,
-                        &MOVE_TABLE_1,
-                        &MOVE_TABLE_2,
-                        &PRUNING_TABLE_1,
-                        &PRUNING_TABLE_2,
-                        max_length,
-                    )
-                });
+                b.iter(|| super_flip.kociemba(&TABLES, max_length));
             },
         );
     }

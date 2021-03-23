@@ -1,5 +1,6 @@
 use cubing::algorithms::kociemba;
-use cubing::rubiks::FaceTurn::{self, *};
+use cubing::rubiks::positions;
+use cubing::rubiks::FaceTurn;
 use std::time::Instant;
 
 fn main() {
@@ -7,38 +8,19 @@ fn main() {
 }
 
 fn kociemba() {
-    println!("Generating phase 1 move table...");
+    println!("Generating Kociemba tables...");
     let now = Instant::now();
-    let move_table_1 = kociemba::Phase1::create_table();
+    let tables = kociemba::generate_tables();
     println!("Generated in {:?}\n", now.elapsed());
 
-    println!("Generating phase 2 move table...");
-    let now = Instant::now();
-    let move_table_2 = kociemba::Phase2::create_table();
-    println!("Generated in {:?}\n", now.elapsed());
-
-    println!("Generating phase 1 pruning table...");
-    let now = Instant::now();
-    let pruning_table_1 = kociemba::Phase1::create_pruning_table(&move_table_1);
-    println!("Generated in {:?}\n", now.elapsed());
-
-    println!("Generating phase 2 pruning table...");
-    let now = Instant::now();
-    let pruning_table_2 = kociemba::Phase2::create_pruning_table(&move_table_2);
-    println!("Generated in {:?}\n", now.elapsed());
-
-    let scramble = vec![
-        U, R2, F, B, R, B2, R, U2, L, B2, R, U3, D3, R2, F, R3, L, B2, U2, F2,
-    ];
-    let _scramble = vec![R2, U3, F2, R, U2, R, U, R2, F3, F, D3, L, U3, R3, F2, D, R];
+    let position = positions::SUPER_FLIP;
 
     use kociemba::Phase1;
-    let position = scramble.iter().cloned().collect::<Phase1>();
     let mut solver = cubing::search::dfs_iter(
-        position,
+        Phase1::from(&position),
         Phase1::default(),
-        &pruning_table_1,
-        &move_table_1,
+        &tables.1,
+        &tables.0,
         11,
     );
 
@@ -52,19 +34,9 @@ fn kociemba() {
         solver.nodes() as f64 / time.as_secs_f64(),
     );
 
-    println!(
-        "Solving scramble [{}]...",
-        FaceTurn::format_seq(scramble.iter().cloned()),
-    );
+    println!("Solving superflip...",);
     let now = Instant::now();
-    let solution = kociemba::solve(
-        &scramble.into_iter().collect(),
-        &move_table_1,
-        &move_table_2,
-        &pruning_table_1,
-        &pruning_table_2,
-        Some(22),
-    );
+    let solution = position.kociemba(&tables, Some(22));
     println!("Solved in {:?}", now.elapsed());
     println!("[{}]", FaceTurn::format_seq(solution.into_iter()));
 }
