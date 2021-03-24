@@ -2,16 +2,15 @@ use crate::core::definitions as def;
 use crate::core::pruning;
 use crate::core::search::{Depth, Search};
 use crate::core::transition as trans;
-use crate::notation::HTM;
-use crate::rubiks::*;
-use alloc::vec::Vec;
-use core::cmp::max;
-use core::convert::TryFrom;
-use core::iter::FromIterator;
+use crate::metric::{htm, Htm};
+use crate::puzzle::*;
+use std::cmp::max;
+use std::convert::TryFrom;
+use std::iter::FromIterator;
 
-type Corners = def::OrientationCoord<CORNERS, TWISTS>;
-type Edges = def::OrientationCoord<EDGES, FLIPS>;
-type Slice = def::CombinationCoord<EDGES, BELT_EDGES>;
+type Corners = def::OrientationCoord<8, 3>;
+type Edges = def::OrientationCoord<12, 2>;
+type Slice = def::CombinationCoord<12, 4>;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Cube {
@@ -37,13 +36,13 @@ impl Cube {
         PruningTable::new(move_table)
     }
 
-    pub fn gen_to_htm(gen: usize) -> HTM {
-        HTM::try_from(gen).unwrap()
+    pub fn gen_to_htm(gen: usize) -> Htm {
+        Htm::try_from(gen).unwrap()
     }
 }
 
 impl Search for Cube {
-    type Iter = alloc::vec::IntoIter<(Self, Self::Edge)>;
+    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -53,7 +52,7 @@ impl Search for Cube {
     }
 
     fn transition(self, table: &Self::TransitionData) -> Self::Iter {
-        (0..MOVE_COUNT)
+        (0..Htm::COUNT)
             .map(|ix| (table.lookup(self, ix), ix))
             .collect::<Vec<_>>()
             .into_iter()
@@ -70,51 +69,26 @@ impl From<&Cube3x3> for Cube {
     }
 }
 
-impl From<&HTM> for Cube {
-    fn from(turn: &HTM) -> Self {
-        use HTM::*;
+impl From<Htm> for Cube {
+    fn from(htm: Htm) -> Self {
+        let corners: &htm::Corners = htm.into();
+        let edges: &htm::Edges = htm.into();
 
-        let ix = match turn {
-            U1 => 0,
-            U2 => 1,
-            U3 => 2,
-            R1 => 3,
-            R2 => 4,
-            R3 => 5,
-            F1 => 6,
-            F2 => 7,
-            F3 => 8,
-            L1 => 9,
-            L2 => 10,
-            L3 => 11,
-            D1 => 12,
-            D2 => 13,
-            D3 => 14,
-            B1 => 15,
-            B2 => 16,
-            B3 => 17,
-        };
-
-        let corners = CORNER_MOVES[ix].o_coordinate();
-        let edges = EDGE_MOVES[ix].o_coordinate();
-        let slice = EDGE_MOVES[ix].c_coordinate();
-
-        Cube {
-            corners,
-            edges,
-            slice,
-        }
+        Self::new(
+            corners.o_coordinate(),
+            edges.o_coordinate(),
+            edges.c_coordinate(),
+        )
     }
 }
 
-impl FromIterator<HTM> for Cube {
-    fn from_iter<T: IntoIterator<Item = HTM>>(iter: T) -> Self {
+impl FromIterator<Htm> for Cube {
+    fn from_iter<T: IntoIterator<Item = Htm>>(iter: T) -> Self {
         let (corners, edges) = iter
             .into_iter()
-            .map(usize::from)
-            .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix]))
+            .map(|htm| -> (&htm::Corners, &htm::Edges) { (htm.into(), htm.into()) })
             .fold(
-                (def::Array::default(), def::Array::default()),
+                (htm::Corners::default(), htm::Edges::default()),
                 |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
             );
 
@@ -126,14 +100,13 @@ impl FromIterator<HTM> for Cube {
     }
 }
 
-impl<'a> FromIterator<&'a HTM> for Cube {
-    fn from_iter<T: IntoIterator<Item = &'a HTM>>(iter: T) -> Self {
+impl<'a> FromIterator<&'a Htm> for Cube {
+    fn from_iter<T: IntoIterator<Item = &'a Htm>>(iter: T) -> Self {
         let (corners, edges) = iter
             .into_iter()
-            .map(|x| usize::from(*x))
-            .map(|ix| (&CORNER_MOVES[ix], &EDGE_MOVES[ix]))
+            .map(|htm| -> (&htm::Corners, &htm::Edges) { ((*htm).into(), (*htm).into()) })
             .fold(
-                (def::Array::default(), def::Array::default()),
+                (htm::Corners::default(), htm::Edges::default()),
                 |(w, x), (y, z)| (w.permute(&y), x.permute(&z)),
             );
 
@@ -146,17 +119,17 @@ impl<'a> FromIterator<&'a HTM> for Cube {
 }
 
 pub struct Table(
-    trans::Table<Corners, { Corners::BOUND }, MOVE_COUNT>,
-    trans::Table<Edges, { Edges::BOUND }, MOVE_COUNT>,
-    trans::Table<Slice, { Slice::BOUND }, MOVE_COUNT>,
+    trans::Table<Corners, { Corners::BOUND }, { Htm::COUNT }>,
+    trans::Table<Edges, { Edges::BOUND }, { Htm::COUNT }>,
+    trans::Table<Slice, { Slice::BOUND }, { Htm::COUNT }>,
 );
 
 impl Table {
     pub fn new() -> Self {
         Self(
-            trans::Table::new(&CORNER_MOVES, Corners::all(), Corners::permute),
-            trans::Table::new(&EDGE_MOVES, Edges::all(), Edges::permute),
-            trans::Table::new(&EDGE_MOVES, Slice::all(), Slice::permute),
+            trans::Table::new(&Htm::CORNER_MOVES, Corners::all(), Corners::permute),
+            trans::Table::new(&Htm::EDGE_MOVES, Edges::all(), Edges::permute),
+            trans::Table::new(&Htm::EDGE_MOVES, Slice::all(), Slice::permute),
         )
     }
 
@@ -192,9 +165,9 @@ pub struct PruningTable(
 impl PruningTable {
     pub fn new(Table(c_table, e_table, s_table): &Table) -> Self {
         Self(
-            pruning::Table::new(&GENERATORS, |coord, gen| c_table.lookup(coord, *gen)),
-            pruning::Table::new(&GENERATORS, |coord, gen| e_table.lookup(coord, *gen)),
-            pruning::Table::new(&GENERATORS, |coord, gen| s_table.lookup(coord, *gen)),
+            pruning::Table::new(&Htm::GENERATORS, |coord, gen| c_table.lookup(coord, *gen)),
+            pruning::Table::new(&Htm::GENERATORS, |coord, gen| e_table.lookup(coord, *gen)),
+            pruning::Table::new(&Htm::GENERATORS, |coord, gen| s_table.lookup(coord, *gen)),
         )
     }
 

@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 pub type Depth = u8;
 
 pub trait Search: Copy + Default + Eq + Sized {
@@ -148,7 +146,7 @@ impl<T: Search> DFSIterator<'_, T> {
                 .find(|(v, _)| v.heuristic(data) + current < target)
             {
                 let past =
-                    core::mem::replace(&mut self.future, vertex.transition(self.transition_data));
+                    std::mem::replace(&mut self.future, vertex.transition(self.transition_data));
                 self.path.push((vertex, edge, past));
                 self.current_depth += 1;
             } else if let Some((_vertex, _edge, past)) = self.path.pop() {

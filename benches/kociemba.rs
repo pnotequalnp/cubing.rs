@@ -50,7 +50,7 @@ pub fn superflip(c: &mut Criterion) {
     Lazy::force(&TABLES);
     let mut group = c.benchmark_group("kociemba/superflip");
     group.sample_size(50);
-    let superflip = cubing::rubiks::positions::SUPER_FLIP;
+    let superflip = cubing::puzzle::positions::SUPER_FLIP;
 
     let position = kociemba::Phase1::from(&superflip);
     group.bench_function("phase_1/1_solution", |b| {

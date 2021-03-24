@@ -1,5 +1,4 @@
-use alloc::boxed::Box;
-use core::convert::TryInto;
+use std::convert::TryInto;
 
 /// A table which allows for the precomputation of all transitions of a set of generators.
 pub struct Table<T: Copy + Into<usize>, const SIZE: usize, const G: usize>(Box<[T; SIZE * G]>)
@@ -23,7 +22,7 @@ where
         transition: impl Fn(T, &Alt) -> T,
     ) -> Self
     where
-        T: Copy + core::fmt::Debug + Default,
+        T: Copy + std::fmt::Debug + Default,
         [T; SIZE * G]: Sized,
     {
         let mut table: Box<[T; SIZE * G]> = vec![T::default(); SIZE * G]

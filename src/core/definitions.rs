@@ -1,6 +1,6 @@
 use crate::util::{binomial, factorial, power};
-use core::convert::{TryFrom, TryInto};
-use core::iter::Product;
+use std::convert::{TryFrom, TryInto};
+use std::iter::Product;
 
 type Element = u8;
 type Orientation = u8;

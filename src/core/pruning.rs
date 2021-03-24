@@ -1,8 +1,6 @@
 pub use crate::core::search::Depth;
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-use core::convert::{TryFrom, TryInto};
-use core::marker::PhantomData;
+use std::convert::{TryFrom, TryInto};
+use std::marker::PhantomData;
 
 pub struct Table<S: Copy + Default + Into<usize> + TryFrom<usize>, const N: usize>(
     Box<[Depth; N]>,

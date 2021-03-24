@@ -4,14 +4,13 @@ use crate::core::definitions as def;
 use crate::core::pruning;
 use crate::core::search::{Depth, Search};
 use crate::core::transition as trans;
-use crate::notation::HTM;
-use crate::rubiks::Cube3x3;
+use crate::metric::Htm;
+use crate::puzzle::Cube3x3;
 use crate::util::count;
-use alloc::vec::Vec;
-use core::cmp::max;
-use core::convert::TryFrom;
-use core::iter::FromIterator;
 use moves::*;
+use std::cmp::max;
+use std::convert::TryFrom;
+use std::iter::FromIterator;
 
 type Corners = def::PermutationCoord<CORNERS>;
 type Edges = def::PermutationCoord<EDGES>;
@@ -47,8 +46,8 @@ impl Cube {
         PruningTable::new(move_table)
     }
 
-    pub fn gen_to_htm(value: usize) -> HTM {
-        use HTM::*;
+    pub fn gen_to_htm(value: usize) -> Htm {
+        use Htm::*;
 
         match value {
             0 => U1,
@@ -67,7 +66,7 @@ impl Cube {
 }
 
 impl Search for Cube {
-    type Iter = alloc::vec::IntoIter<(Self, Self::Edge)>;
+    type Iter = std::vec::IntoIter<(Self, Self::Edge)>;
     type Edge = usize;
     type HeuristicData = PruningTable;
     type TransitionData = Table;
@@ -100,11 +99,11 @@ impl TryFrom<&Cube3x3> for Cube {
     }
 }
 
-impl TryFrom<HTM> for Cube {
+impl TryFrom<Htm> for Cube {
     type Error = ();
 
-    fn try_from(turn: HTM) -> Result<Self, Self::Error> {
-        use HTM::*;
+    fn try_from(turn: Htm) -> Result<Self, Self::Error> {
+        use Htm::*;
 
         let ix = match turn {
             U1 => Ok(0),
@@ -133,8 +132,8 @@ impl TryFrom<HTM> for Cube {
 }
 
 // TODO: this is dumb, is it used?
-impl FromIterator<HTM> for Cube {
-    fn from_iter<T: IntoIterator<Item = HTM>>(iter: T) -> Self {
+impl FromIterator<Htm> for Cube {
+    fn from_iter<T: IntoIterator<Item = Htm>>(iter: T) -> Self {
         let (corners, edges, slice) = iter
             .into_iter()
             .map(usize::try_from)

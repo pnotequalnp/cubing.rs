@@ -2,10 +2,22 @@ fn main() {
     kociemba();
 }
 
+#[allow(dead_code)]
+fn random() {
+    use cubing::algorithms::kociemba;
+    use cubing::metric::Htm;
+
+    let tables = kociemba::generate_tables();
+    let position = cubing::puzzle::Cube3x3::random_state();
+    let mut solution = position.kociemba(&tables, None);
+    solution.reverse();
+    println!("{}", Htm::format_seq(solution.into_iter()));
+}
+
+#[allow(dead_code)]
 fn kociemba() {
     use cubing::algorithms::kociemba;
-    use cubing::notation::HTM;
-    use cubing::rubiks::positions;
+    use cubing::puzzle::positions;
     use std::time::Instant;
 
     println!("Generating Kociemba tables...");
@@ -38,5 +50,8 @@ fn kociemba() {
     let now = Instant::now();
     let solution = position.kociemba(&tables, Some(22));
     println!("Solved in {:?}", now.elapsed());
-    println!("[{}]", HTM::format_seq(solution.into_iter()));
+    println!(
+        "[{}]",
+        cubing::metric::Htm::format_seq(solution.into_iter())
+    );
 }

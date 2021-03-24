@@ -6,11 +6,8 @@
 #![feature(const_panic)]
 #![feature(iter_intersperse)]
 
-#[macro_use]
-extern crate alloc;
-
 pub mod algorithms;
 pub mod core;
-pub mod notation;
-pub mod rubiks;
+pub mod metric;
+pub mod puzzle;
 pub mod util;
