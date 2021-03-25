@@ -1,7 +1,7 @@
 #![feature(iter_advance_by)]
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use cubing::algorithms::kociemba;
+use cubing::algorithm::kociemba;
 use cubing::core::search;
 use once_cell::sync::Lazy;
 

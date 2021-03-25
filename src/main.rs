@@ -4,7 +4,7 @@ fn main() {
 
 #[allow(dead_code)]
 fn random() {
-    use cubing::algorithms::kociemba;
+    use cubing::algorithm::kociemba;
     use cubing::metric::Htm;
 
     let tables = kociemba::generate_tables();
@@ -16,7 +16,7 @@ fn random() {
 
 #[allow(dead_code)]
 fn kociemba() {
-    use cubing::algorithms::kociemba;
+    use cubing::algorithm::kociemba;
     use cubing::puzzle::positions;
     use std::time::Instant;
 

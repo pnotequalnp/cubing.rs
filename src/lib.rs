@@ -6,7 +6,7 @@
 #![feature(const_panic)]
 #![feature(iter_intersperse)]
 
-pub mod algorithms;
+pub mod algorithm;
 pub mod core;
 pub mod metric;
 pub mod puzzle;
